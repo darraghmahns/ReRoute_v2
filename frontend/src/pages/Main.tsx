@@ -32,7 +32,7 @@ const Main: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-full">
       {/* Slider / Tab nav */}
       <div className="flex justify-center space-x-2 mb-4 overflow-x-auto px-2 py-2 bg-reroute-card border-b border-reroute-card sticky top-0 z-10">
         {tabs.map((tab) => (

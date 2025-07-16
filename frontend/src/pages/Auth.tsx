@@ -80,7 +80,7 @@ const Auth: React.FC = () => {
   // Show loading if checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-reroute-gradient">
+      <div className="min-h-full flex items-center justify-center bg-reroute-gradient">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-reroute-primary mx-auto mb-4"></div>
           <p className="text-white">Loading...</p>
@@ -95,7 +95,7 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">Reroute</h2>

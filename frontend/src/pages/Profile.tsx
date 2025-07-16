@@ -111,7 +111,7 @@ const Profile: React.FC = () => {
   const unearnedAchievements = achievements.filter(a => !a.earned);
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-full flex">
       {/* Sidebar */}
       <aside className="w-56 bg-reroute-card border-r border-reroute-card py-8 hidden md:block">
         <nav className="space-y-2 px-4">
