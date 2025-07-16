@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, profiles, routes, training, strava, chat, analytics, subscription
+from app.core.database import engine, Base
 
 app = FastAPI(title="Reroute - AI-Powered Cycling Training Assistant")
 
@@ -23,6 +24,8 @@ app.include_router(strava.router)
 app.include_router(chat.router)
 app.include_router(analytics.router)
 app.include_router(subscription.router)
+
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def root():
