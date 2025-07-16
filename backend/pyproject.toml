@@ -1,0 +1,40 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Darragh Mahns",email = "darraghmahns@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi (>=0.116.0,<0.117.0)",
+    "uvicorn[standard] (>=0.35.0,<0.36.0)",
+    "sqlalchemy (>=2.0.41,<3.0.0)",
+    "alembic (>=1.16.4,<2.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "fastapi-users[sqlalchemy] (>=14.0.1,<15.0.0)",
+    "python-jose[cryptography] (>=3.5.0,<4.0.0)",
+    "passlib[bcrypt] (>=1.7.4,<2.0.0)",
+    "pydantic (>=2.11.7,<3.0.0)",
+    "celery (>=5.5.3,<6.0.0)",
+    "redis (>=6.2.0,<7.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "email-validator (>=2.2.0,<3.0.0)",
+    "pydantic-settings (>=2.10.1,<3.0.0)",
+    "requests (>=2.32.4,<3.0.0)",
+    "openai (>=1.95.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{ include = "app" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+httpx = "^0.28.1"
+

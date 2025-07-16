@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-reroute-gradient font-sans text-white min-h-screen;
+}
+
+.card {
+  @apply bg-reroute-card shadow-card rounded-xl p-6;
+}
+
+/* Override default form styles for dark mode */
+input, select, textarea {
+  @apply bg-reroute-card text-white border-reroute-gray placeholder-gray-400;
+}
