@@ -31,7 +31,7 @@ const Settings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-reroute-primary mx-auto mb-4"></div>
           <p className="text-white">Loading settings...</p>
@@ -41,7 +41,7 @@ const Settings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-full">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

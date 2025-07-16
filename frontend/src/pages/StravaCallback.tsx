@@ -71,7 +71,7 @@ const StravaCallback: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-reroute-gradient">
+    <div className="min-h-full flex items-center justify-center bg-reroute-gradient">
       <Card className="max-w-md w-full mx-4">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
