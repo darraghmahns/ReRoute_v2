@@ -8,6 +8,8 @@ import requests
 from typing import Optional
 import json
 import logging
+from datetime import datetime
+from app.models.strava import StravaActivity
 
 router = APIRouter(prefix="/strava", tags=["strava"])
 
@@ -88,35 +90,50 @@ async def handle_callback(request: Request, current_user: User = Depends(get_cur
 
 @router.post("/sync")
 def sync_activities(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    """Sync activities from Strava"""
+    """Sync activities from Strava, including streams."""
     try:
         profile = db.query(Profile).filter(Profile.id == current_user.id).first()
-        
         if not profile or not profile.strava_access_token:
             raise HTTPException(status_code=400, detail="Strava not connected")
-        
-        # Get recent activities
         activities_url = "https://www.strava.com/api/v3/athlete/activities"
         headers = {"Authorization": f"Bearer {profile.strava_access_token}"}
-        
         response = requests.get(activities_url, headers=headers, params={"per_page": 30})
-        
         if response.status_code == 200:
             activities = response.json()
-            
-            # Here you would typically save activities to your database
-            # For now, we'll just return the count
+            upserted = 0
+            for act in activities:
+                act_id = act.get("id")
+                if not act_id:
+                    continue
+                # Upsert activity summary
+                db_act = db.query(StravaActivity).filter(StravaActivity.id == act_id, StravaActivity.user_id == current_user.id).first()
+                if not db_act:
+                    db_act = StravaActivity(id=act_id, user_id=current_user.id, name=act.get("name"), summary=act, streams=None)
+                    db.add(db_act)
+                else:
+                    db_act.name = act.get("name")
+                    db_act.summary = act
+                # Fetch streams if not present
+                if db_act.streams is None:
+                    streams_url = f"https://www.strava.com/api/v3/activities/{act_id}/streams"
+                    stream_keys = "watts,heartrate,latlng,altitude,time,distance,cadence,temp,grade_smooth,velocity_smooth"
+                    streams_resp = requests.get(streams_url, headers=headers, params={"keys": stream_keys, "key_by_type": "true"})
+                    if streams_resp.status_code == 200:
+                        db_act.streams = streams_resp.json()
+                db_act.updated_at = datetime.utcnow()
+                upserted += 1
+            db.commit()
             return {
-                "message": f"Synced {len(activities)} activities",
-                "activities_count": len(activities),
+                "message": f"Synced {upserted} activities (with streams)",
+                "activities_count": upserted,
                 "activities": activities[:5]  # Return first 5 for preview
             }
         else:
             raise HTTPException(status_code=400, detail="Failed to fetch activities")
-            
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error syncing activities: {str(e)}")
 
 @router.get("/activities")
@@ -208,3 +225,28 @@ def disconnect(current_user: User = Depends(get_current_active_user), db: Sessio
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error disconnecting Strava: {str(e)}") 
+
+@router.get("/activities/db")
+def get_activities_db(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """Get all Strava activities for the user from the database, including streams."""
+    acts = db.query(StravaActivity).filter(StravaActivity.user_id == current_user.id).order_by(StravaActivity.created_at.desc()).all()
+    return [
+        {
+            "id": a.id,
+            "name": a.name,
+            "summary": a.summary,
+            "has_streams": a.streams is not None,
+            "streams": a.streams if a.streams else None,
+        }
+        for a in acts
+    ]
+
+@router.get("/activities/{activity_id}/streams")
+def get_activity_streams(activity_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """Get the streams for a specific activity (if present)."""
+    act = db.query(StravaActivity).filter(StravaActivity.id == activity_id, StravaActivity.user_id == current_user.id).first()
+    if not act:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if not act.streams:
+        raise HTTPException(status_code=404, detail="No streams found for this activity")
+    return act.streams 

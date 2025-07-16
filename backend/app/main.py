@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, profiles, routes, training, strava, chat, analytics, subscription
 from app.core.database import engine, Base
+import app.models.strava as strava_models  # ensure StravaActivity is registered
 
 app = FastAPI(title="Reroute - AI-Powered Cycling Training Assistant")
 

@@ -3,6 +3,7 @@ import requests
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+from dateutil import parser as date_parser
 
 from app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryResponse, ChatMessage  # schema
 from app.services.openai_chat import openai_chat_service
@@ -12,6 +13,7 @@ from app.models.user import User, Profile
 from app.models.chat import ChatMessage as ChatMessageDB
 from app.models.training import TrainingPlan
 from typing import List
+from app.models.strava import StravaActivity
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -42,6 +44,36 @@ def _strava_summary(db: Session, user: User) -> str:
         return "Unable to fetch Strava activities."
 
 
+def _strava_streams_summary(db: Session, user: User, limit: int = 3) -> str:
+    """Return a summary of recent Strava activities and their streams."""
+    acts = (
+        db.query(StravaActivity)
+        .filter(StravaActivity.user_id == user.id)
+        .order_by(StravaActivity.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    if not acts:
+        return "No recent Strava activities with streams."
+    lines = []
+    for a in acts:
+        line = f"{a.name or 'Activity'} (id: {a.id}): "
+        if a.streams:
+            stream_types = list(a.streams.keys())
+            line += f"streams: {', '.join(stream_types)}"
+            # Optionally, add a short stat, e.g. max watts, avg heartrate
+            if 'watts' in a.streams and a.streams['watts'].get('data'):
+                max_watts = max(a.streams['watts']['data'])
+                line += f", max watts: {max_watts}"
+            if 'heartrate' in a.streams and a.streams['heartrate'].get('data'):
+                avg_hr = sum(a.streams['heartrate']['data']) / len(a.streams['heartrate']['data'])
+                line += f", avg HR: {avg_hr:.1f}"
+        else:
+            line += "no streams"
+        lines.append(line)
+    return "Recent Strava activities with streams:\n" + "\n".join(lines)
+
+
 def _training_plan_summary(db: Session, user: User) -> str:
     plan: TrainingPlan | None = (
         db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
@@ -57,6 +89,118 @@ def _training_plan_summary(db: Session, user: User) -> str:
     if goal:
         parts.append(f"goal={goal}")
     return "Current training plan: " + ", ".join(parts)
+
+
+def _parse_timeframe_or_activity(message: str):
+    """Very basic NLP to extract timeframes or activity references from the user's message."""
+    message = message.lower()
+    # Look for 'last X days/weeks'
+    m = re.search(r'last (\d+) (day|week|month|year)s?', message)
+    if m:
+        num = int(m.group(1))
+        unit = m.group(2)
+        if unit == 'day':
+            return {'type': 'timeframe', 'days': num}
+        elif unit == 'week':
+            return {'type': 'timeframe', 'days': num * 7}
+        elif unit == 'month':
+            return {'type': 'timeframe', 'days': num * 30}
+        elif unit == 'year':
+            return {'type': 'timeframe', 'days': num * 365}
+    # Look for 'on <date>'
+    m = re.search(r'on ([a-zA-Z0-9 ,/-]+)', message)
+    if m:
+        try:
+            dt = date_parser.parse(m.group(1), fuzzy=True)
+            return {'type': 'date', 'date': dt.date()}
+        except Exception:
+            pass
+    # Look for activity id
+    m = re.search(r'activity (\d+)', message)
+    if m:
+        return {'type': 'activity_id', 'id': int(m.group(1))}
+    # Look for 'recent', 'latest', etc.
+    if 'recent' in message or 'latest' in message or 'most recent' in message:
+        return {'type': 'recent', 'count': 1}
+    return None
+
+
+def _strava_adaptive_context(db: Session, user: User, user_message: str) -> str:
+    """Build a context string for the AI based on the user's message."""
+    parsed = _parse_timeframe_or_activity(user_message)
+    if parsed:
+        if parsed['type'] == 'timeframe':
+            cutoff = datetime.utcnow() - timedelta(days=parsed['days'])
+            acts = (
+                db.query(StravaActivity)
+                .filter(StravaActivity.user_id == user.id, StravaActivity.created_at >= cutoff)
+                .order_by(StravaActivity.created_at.desc())
+                .all()
+            )
+            if not acts:
+                return f"No Strava activities found in the last {parsed['days']} days."
+            return _format_activities_with_streams(acts)
+        elif parsed['type'] == 'date':
+            # Find activities on that date
+            acts = (
+                db.query(StravaActivity)
+                .filter(StravaActivity.user_id == user.id)
+                .all()
+            )
+            acts_on_date = [a for a in acts if a.summary and 'start_date' in a.summary and date_parser.parse(a.summary['start_date']).date() == parsed['date']]
+            if not acts_on_date:
+                return f"No Strava activities found on {parsed['date']}."
+            return _format_activities_with_streams(acts_on_date)
+        elif parsed['type'] == 'activity_id':
+            act = db.query(StravaActivity).filter(StravaActivity.user_id == user.id, StravaActivity.id == parsed['id']).first()
+            if not act:
+                return f"No Strava activity found with id {parsed['id']}."
+            return _format_activities_with_streams([act])
+        elif parsed['type'] == 'recent':
+            acts = (
+                db.query(StravaActivity)
+                .filter(StravaActivity.user_id == user.id)
+                .order_by(StravaActivity.created_at.desc())
+                .limit(1)
+                .all()
+            )
+            if not acts:
+                return "No recent Strava activities found."
+            return _format_activities_with_streams(acts)
+    # Default: summary only
+    acts = (
+        db.query(StravaActivity)
+        .filter(StravaActivity.user_id == user.id)
+        .order_by(StravaActivity.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    if not acts:
+        return "No Strava activities found."
+    lines = [f"{a.name or 'Activity'} (id: {a.id}, date: {a.summary.get('start_date', 'unknown')[:10]})" for a in acts]
+    return (
+        "Summary of recent Strava activities (name, id, date):\n" +
+        "\n".join(lines) +
+        "\nIf you want to analyze a specific activity or time period, ask the user for more details."
+    )
+
+def _format_activities_with_streams(acts):
+    lines = []
+    for a in acts:
+        line = f"{a.name or 'Activity'} (id: {a.id}, date: {a.summary.get('start_date', 'unknown')[:10]}): "
+        if a.streams:
+            stream_types = list(a.streams.keys())
+            line += f"streams: {', '.join(stream_types)}"
+            if 'watts' in a.streams and a.streams['watts'].get('data'):
+                max_watts = max(a.streams['watts']['data'])
+                line += f", max watts: {max_watts}"
+            if 'heartrate' in a.streams and a.streams['heartrate'].get('data'):
+                avg_hr = sum(a.streams['heartrate']['data']) / len(a.streams['heartrate']['data'])
+                line += f", avg HR: {avg_hr:.1f}"
+        else:
+            line += "no streams"
+        lines.append(line)
+    return "Detailed Strava activity data:\n" + "\n".join(lines)
 
 
 def _system_context_for_user(db: Session, user: User) -> ChatMessage:
@@ -77,11 +221,17 @@ def _system_context_for_user(db: Session, user: User) -> ChatMessage:
         if profile.fitness_level:
             prof_parts.append(f"fitness level: {profile.fitness_level}")
 
+    user_msg = ""
+    if db.query(ChatMessageDB).filter(ChatMessageDB.user_id == user.id).order_by(ChatMessageDB.created_at.desc()).first():
+        user_msg = db.query(ChatMessageDB).filter(ChatMessageDB.user_id == user.id).order_by(ChatMessageDB.created_at.desc()).first().content
     content_sections = [
         "You are Reroute AI, a friendly cycling training assistant.",
+        "You have access to all of the user's Strava activities and their detailed streams (power, heart rate, etc.).",
+        "When the user asks about a specific activity, date, or time period, use the relevant data to answer. If the user is not specific, ask clarifying questions to help them get the most relevant analysis.",
         "Profile: " + "; ".join(prof_parts) if prof_parts else "No profile information.",
         _strava_summary(db, user),
         _training_plan_summary(db, user),
+        _strava_adaptive_context(db, user, user_msg),
     ]
     content = "\n".join(content_sections)
     return ChatMessage(role="system", content=content)

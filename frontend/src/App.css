@@ -38,3 +38,22 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Compact markdown for chat bubbles */
+.prose-chat p,
+.prose-chat ul,
+.prose-chat ol,
+.prose-chat li,
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3,
+.prose-chat h4,
+.prose-chat h5,
+.prose-chat h6 {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+/* Hide scrollbars for chat window */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

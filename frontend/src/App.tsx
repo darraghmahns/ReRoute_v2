@@ -17,7 +17,7 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col bg-reroute-gradient bg-cover">
         <Navigation />
-        <main className="flex-1 container mx-auto px-2 py-4">
+        <main className="container mx-auto px-2 py-4 flex-1">
           <React.Suspense fallback={
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center">

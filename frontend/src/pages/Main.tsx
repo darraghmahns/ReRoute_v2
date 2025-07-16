@@ -34,21 +34,23 @@ const Main: React.FC = () => {
   return (
     <div className="min-h-full">
       {/* Slider / Tab nav */}
-      <div className="flex justify-center space-x-2 mb-4 overflow-x-auto px-2 py-2 bg-reroute-card border-b border-reroute-card sticky top-0 z-10">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={
-              `px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ` +
-              (activeTab === tab.id
-                ? 'bg-reroute-primary text-white'
-                : 'bg-reroute-card text-gray-400 hover:text-white hover:bg-reroute-card/80')
-            }
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex justify-center w-full mb-4 sticky top-0 z-10">
+        <div className="flex space-x-2 px-4 py-2 rounded-2xl shadow-lg bg-white/90 border-2 border-reroute-primary mx-auto" style={{width: 'fit-content', minWidth: 0}}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={
+                `px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ` +
+                (activeTab === tab.id
+                  ? 'bg-reroute-primary text-white shadow-md'
+                  : 'bg-white text-reroute-primary hover:bg-reroute-primary/10 hover:text-reroute-primary')
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content */}

@@ -13,7 +13,16 @@
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
-  "keywords": ["cycling", "training", "ai", "routes", "strava"],
+  "keywords": [
+    "cycling",
+    "training",
+    "ai",
+    "routes",
+    "strava"
+  ],
   "author": "Darragh Mahns",
-  "license": "MIT"
-} 
+  "license": "MIT",
+  "dependencies": {
+    "react-markdown": "^10.1.0"
+  }
+}
