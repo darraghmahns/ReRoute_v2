@@ -91,26 +91,51 @@ export interface RouteGenerationParams {
 
 // Training Plan Types
 export interface Workout {
-  day: string;
-  type: string;
-  duration: string;
-  intensity: 'recovery' | 'endurance' | 'threshold' | 'vo2max' | 'cross-training';
+  id: string;
+  title: string;
   description: string;
+  duration_minutes: number;
+  workout_type: 'recovery' | 'endurance' | 'threshold' | 'vo2max' | 'cross_training' | 'rest';
+  ftp_percentage_min?: number;
+  ftp_percentage_max?: number;
+  details?: string;
+  completed: boolean;
+}
+
+export interface TrainingWeek {
+  week_start_date: string;
+  workouts: {
+    monday: Workout;
+    tuesday: Workout;
+    wednesday: Workout;
+    thursday: Workout;
+    friday: Workout;
+    saturday: Workout;
+    sunday: Workout;
+  };
 }
 
 export interface TrainingPlan {
   id: string;
   user_id: string;
   name: string;
-  race_goal?: string;
-  race_date?: string;
+  goal: string;
   weekly_hours: number;
-  plan_data: {
-    workouts: Workout[];
-  };
+  start_date: string;
+  end_date?: string;
   is_active: boolean;
+  plan_data: {
+    weeks: TrainingWeek[];
+  };
   created_at: string;
   updated_at: string;
+}
+
+export interface GeneratePlanRequest {
+  goal: string;
+  weekly_hours: number;
+  fitness_level?: string;
+  preferences?: string[];
 }
 
 // Strava Types
