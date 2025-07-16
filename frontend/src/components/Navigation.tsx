@@ -20,6 +20,7 @@ const Navigation: React.FC = () => {
             <Link to="/" className="text-white hover:text-reroute-primary transition-colors">Dashboard</Link>
             <Link to="/routes" className="text-white hover:text-reroute-primary transition-colors">Routes</Link>
             <Link to="/training" className="text-white hover:text-reroute-primary transition-colors">Training</Link>
+            <Link to="/chat" className="text-white hover:text-reroute-primary transition-colors">Chat</Link>
             <Link to="/profile" className="text-white hover:text-reroute-primary transition-colors">Profile</Link>
             <Link to="/settings" className="text-white hover:text-reroute-primary transition-colors">Settings</Link>
             <Link to="/subscription" className="text-white hover:text-reroute-primary transition-colors">Subscription</Link>

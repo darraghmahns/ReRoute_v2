@@ -15,6 +15,7 @@ const SettingsPage = React.lazy(() => import('./pages/Settings'));
 const StravaCallbackPage = React.lazy(() => import('./pages/StravaCallback'));
 const SubscriptionPage = React.lazy(() => import('./pages/Subscription'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
+const ChatPage = React.lazy(() => import('./pages/Chat'));
 
 function App() {
   return (
@@ -64,6 +65,11 @@ function App() {
               <Route path="/subscription" element={
                 <ProtectedRoute>
                   <SubscriptionPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <ChatPage />
                 </ProtectedRoute>
               } />
               
