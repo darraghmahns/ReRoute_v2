@@ -6,16 +6,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 // Placeholder pages
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const RoutesPage = React.lazy(() => import('./pages/Routes'));
-const TrainingPage = React.lazy(() => import('./pages/Training'));
+const MainPage = React.lazy(() => import('./pages/Main'));
 const ProfilePage = React.lazy(() => import('./pages/Profile'));
 const AuthPage = React.lazy(() => import('./pages/Auth'));
-const SettingsPage = React.lazy(() => import('./pages/Settings'));
 const StravaCallbackPage = React.lazy(() => import('./pages/StravaCallback'));
-const SubscriptionPage = React.lazy(() => import('./pages/Subscription'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
-const ChatPage = React.lazy(() => import('./pages/Chat'));
 
 function App() {
   return (
@@ -39,17 +34,7 @@ function App() {
               {/* Protected routes */}
               <Route path="/" element={
                 <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/routes" element={
-                <ProtectedRoute>
-                  <RoutesPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/training" element={
-                <ProtectedRoute>
-                  <TrainingPage />
+                  <MainPage />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
@@ -57,21 +42,7 @@ function App() {
                   <ProfilePage />
                 </ProtectedRoute>
               } />
-              <Route path="/settings/*" element={
-                <ProtectedRoute>
-                  <SettingsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/subscription" element={
-                <ProtectedRoute>
-                  <SubscriptionPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              } />
+              {/* Note: Settings and Subscription are now managed within the Profile page */}
               
               {/* 404 route */}
               <Route path="*" element={<NotFoundPage />} />
