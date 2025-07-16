@@ -69,16 +69,16 @@ const Settings: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Email
                 </label>
-                <p className="text-sm text-gray-600">{user?.email}</p>
+                <p className="text-sm text-gray-300">{user?.email}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Full Name
                 </label>
-                <p className="text-sm text-gray-600">{user?.full_name || 'Not set'}</p>
+                <p className="text-sm text-gray-300">{user?.full_name || 'Not set'}</p>
               </div>
               <Button variant="outline" size="sm">
                 Edit Profile
@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Two-Factor Authentication</p>
-                  <p className="text-xs text-gray-500">Add an extra layer of security</p>
+                  <p className="text-xs text-gray-400">Add an extra layer of security</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Enable
@@ -107,7 +107,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Change Password</p>
-                  <p className="text-xs text-gray-500">Update your password</p>
+                  <p className="text-xs text-gray-400">Update your password</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Change
@@ -128,7 +128,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Email Notifications</p>
-                  <p className="text-xs text-gray-500">Receive updates via email</p>
+                  <p className="text-xs text-gray-400">Receive updates via email</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Configure
@@ -137,7 +137,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Push Notifications</p>
-                  <p className="text-xs text-gray-500">Get alerts on your device</p>
+                  <p className="text-xs text-gray-400">Get alerts on your device</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Configure
@@ -158,7 +158,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Theme</p>
-                  <p className="text-xs text-gray-500">Choose your preferred theme</p>
+                  <p className="text-xs text-gray-400">Choose your preferred theme</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Dark
@@ -167,7 +167,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Units</p>
-                  <p className="text-xs text-gray-500">Metric or Imperial</p>
+                  <p className="text-xs text-gray-400">Metric or Imperial</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Metric
@@ -188,7 +188,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Export Data</p>
-                  <p className="text-xs text-gray-500">Download your data</p>
+                  <p className="text-xs text-gray-400">Download your data</p>
                 </div>
                 <Button variant="outline" size="sm">
                   Export
@@ -197,7 +197,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Delete Account</p>
-                  <p className="text-xs text-gray-500">Permanently delete your account</p>
+                  <p className="text-xs text-gray-400">Permanently delete your account</p>
                 </div>
                 <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
                   Delete

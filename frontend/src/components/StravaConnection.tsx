@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { getStravaAuthUrl, disconnectStrava, syncStravaActivities } from '../services/strava';
 import { Button } from './ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { Activity, Link, Unlink, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Activity, Unlink, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface StravaConnectionProps {
   isConnected: boolean;
@@ -148,14 +148,18 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
             <Button
               onClick={handleConnect}
               disabled={loading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 p-0 bg-transparent hover:bg-transparent shadow-none border-none"
+              style={{ minWidth: 0, minHeight: 0 }}
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
-                <Link className="w-4 h-4" />
+                <img
+                  src="/src/assets/1.1 Connect with Strava Buttons/Connect with Strava Orange/btn_strava_connect_with_orange.svg"
+                  alt="Connect with Strava"
+                  style={{ height: '40px', width: 'auto', display: 'block' }}
+                />
               )}
-              Connect to Strava
             </Button>
           ) : (
             <>

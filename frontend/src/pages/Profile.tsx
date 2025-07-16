@@ -423,7 +423,11 @@ const Profile: React.FC = () => {
         )}
 
         {sidebarSection === 'subscription' && <SubscriptionSection />}
-        {sidebarSection === 'settings' && <SettingsSection />}
+        {sidebarSection === 'settings' && (
+          <div className="text-white [&_label]:text-white [&_p]:text-gray-300 [&_span]:text-gray-300 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white">
+            <SettingsSection />
+          </div>
+        )}
       </div>
     </div>
   );

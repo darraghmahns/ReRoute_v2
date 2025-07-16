@@ -141,7 +141,7 @@ const Dashboard: React.FC = () => {
               <Button
                 onClick={syncActivities}
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-white"
               >
                 {loading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -305,19 +305,19 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-3">
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start text-white" variant="outline">
                   <Route className="w-4 h-4 mr-2" />
                   Generate New Route
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start text-white" variant="outline">
                   <Target className="w-4 h-4 mr-2" />
                   Create Training Plan
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start text-white" variant="outline">
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start text-white" variant="outline">
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Workout
                 </Button>
