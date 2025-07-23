@@ -1,19 +1,25 @@
 import re
+from datetime import datetime, timedelta
+from typing import List
+
 import requests
+from dateutil import parser as date_parser
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from dateutil import parser as date_parser
 
-from app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryResponse, ChatMessage  # schema
-from app.services.openai_chat import openai_chat_service
-from app.core.security import get_current_active_user_by_session
 from app.core.database import get_db
-from app.models.user import User, Profile
+from app.core.security import get_current_active_user_by_session
 from app.models.chat import ChatMessage as ChatMessageDB
-from app.models.training import TrainingPlan
-from typing import List
 from app.models.strava import StravaActivity
+from app.models.training import TrainingPlan
+from app.models.user import Profile, User
+from app.schemas.chat import (  # schema
+    ChatHistoryResponse,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+)
+from app.services.openai_chat import openai_chat_service
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -25,7 +31,9 @@ HISTORY_DAYS = 14  # two weeks
 def _strava_summary(db: Session, user: User) -> str:
     """Return a quick summary of recent Strava activities."""
     try:
-        profile: Profile | None = db.query(Profile).filter(Profile.id == user.id).first()
+        profile: Profile | None = (
+            db.query(Profile).filter(Profile.id == user.id).first()
+        )
         if not profile or not profile.strava_access_token:
             return "Strava not connected."
         activities_url = "https://www.strava.com/api/v3/athlete/activities"
@@ -62,11 +70,13 @@ def _strava_streams_summary(db: Session, user: User, limit: int = 3) -> str:
             stream_types = list(a.streams.keys())
             line += f"streams: {', '.join(stream_types)}"
             # Optionally, add a short stat, e.g. max watts, avg heartrate
-            if 'watts' in a.streams and a.streams['watts'].get('data'):
-                max_watts = max(a.streams['watts']['data'])
+            if "watts" in a.streams and a.streams["watts"].get("data"):
+                max_watts = max(a.streams["watts"]["data"])
                 line += f", max watts: {max_watts}"
-            if 'heartrate' in a.streams and a.streams['heartrate'].get('data'):
-                avg_hr = sum(a.streams['heartrate']['data']) / len(a.streams['heartrate']['data'])
+            if "heartrate" in a.streams and a.streams["heartrate"].get("data"):
+                avg_hr = sum(a.streams["heartrate"]["data"]) / len(
+                    a.streams["heartrate"]["data"]
+                )
                 line += f", avg HR: {avg_hr:.1f}"
         else:
             line += "no streams"
@@ -98,33 +108,33 @@ def _parse_timeframe_or_activity(message: str):
     """Very basic NLP to extract timeframes or activity references from the user's message."""
     message = message.lower()
     # Look for 'last X days/weeks'
-    m = re.search(r'last (\d+) (day|week|month|year)s?', message)
+    m = re.search(r"last (\d+) (day|week|month|year)s?", message)
     if m:
         num = int(m.group(1))
         unit = m.group(2)
-        if unit == 'day':
-            return {'type': 'timeframe', 'days': num}
-        elif unit == 'week':
-            return {'type': 'timeframe', 'days': num * 7}
-        elif unit == 'month':
-            return {'type': 'timeframe', 'days': num * 30}
-        elif unit == 'year':
-            return {'type': 'timeframe', 'days': num * 365}
+        if unit == "day":
+            return {"type": "timeframe", "days": num}
+        elif unit == "week":
+            return {"type": "timeframe", "days": num * 7}
+        elif unit == "month":
+            return {"type": "timeframe", "days": num * 30}
+        elif unit == "year":
+            return {"type": "timeframe", "days": num * 365}
     # Look for 'on <date>'
-    m = re.search(r'on ([a-zA-Z0-9 ,/-]+)', message)
+    m = re.search(r"on ([a-zA-Z0-9 ,/-]+)", message)
     if m:
         try:
             dt = date_parser.parse(m.group(1), fuzzy=True)
-            return {'type': 'date', 'date': dt.date()}
+            return {"type": "date", "date": dt.date()}
         except Exception:
             pass
     # Look for activity id
-    m = re.search(r'activity (\d+)', message)
+    m = re.search(r"activity (\d+)", message)
     if m:
-        return {'type': 'activity_id', 'id': int(m.group(1))}
+        return {"type": "activity_id", "id": int(m.group(1))}
     # Look for 'recent', 'latest', etc.
-    if 'recent' in message or 'latest' in message or 'most recent' in message:
-        return {'type': 'recent', 'count': 1}
+    if "recent" in message or "latest" in message or "most recent" in message:
+        return {"type": "recent", "count": 1}
     return None
 
 
@@ -136,36 +146,49 @@ def _strava_adaptive_context(db: Session, user: User, user_message: str) -> str:
             return "No specific timeframe or activity mentioned."
     except Exception:
         return "Unable to parse user message for activity context."
-    
+
     try:
-        if parsed['type'] == 'timeframe':
-            cutoff = datetime.utcnow() - timedelta(days=parsed['days'])
+        if parsed["type"] == "timeframe":
+            cutoff = datetime.utcnow() - timedelta(days=parsed["days"])
             acts = (
                 db.query(StravaActivity)
-                .filter(StravaActivity.user_id == user.id, StravaActivity.created_at >= cutoff)
+                .filter(
+                    StravaActivity.user_id == user.id,
+                    StravaActivity.created_at >= cutoff,
+                )
                 .order_by(StravaActivity.created_at.desc())
                 .all()
             )
             if not acts:
                 return f"No Strava activities found in the last {parsed['days']} days."
             return _format_activities_with_streams(acts)
-        elif parsed['type'] == 'date':
+        elif parsed["type"] == "date":
             # Find activities on that date
             acts = (
-                db.query(StravaActivity)
-                .filter(StravaActivity.user_id == user.id)
-                .all()
+                db.query(StravaActivity).filter(StravaActivity.user_id == user.id).all()
             )
-            acts_on_date = [a for a in acts if a.summary and 'start_date' in a.summary and date_parser.parse(a.summary['start_date']).date() == parsed['date']]
+            acts_on_date = [
+                a
+                for a in acts
+                if a.summary
+                and "start_date" in a.summary
+                and date_parser.parse(a.summary["start_date"]).date() == parsed["date"]
+            ]
             if not acts_on_date:
                 return f"No Strava activities found on {parsed['date']}."
             return _format_activities_with_streams(acts_on_date)
-        elif parsed['type'] == 'activity_id':
-            act = db.query(StravaActivity).filter(StravaActivity.user_id == user.id, StravaActivity.id == parsed['id']).first()
+        elif parsed["type"] == "activity_id":
+            act = (
+                db.query(StravaActivity)
+                .filter(
+                    StravaActivity.user_id == user.id, StravaActivity.id == parsed["id"]
+                )
+                .first()
+            )
             if not act:
                 return f"No Strava activity found with id {parsed['id']}."
             return _format_activities_with_streams([act])
-        elif parsed['type'] == 'recent':
+        elif parsed["type"] == "recent":
             acts = (
                 db.query(StravaActivity)
                 .filter(StravaActivity.user_id == user.id)
@@ -188,12 +211,16 @@ def _strava_adaptive_context(db: Session, user: User, user_message: str) -> str:
     )
     if not acts:
         return "No Strava activities found."
-    lines = [f"{a.name or 'Activity'} (id: {a.id}, date: {a.summary.get('start_date', 'unknown')[:10]})" for a in acts]
+    lines = [
+        f"{a.name or 'Activity'} (id: {a.id}, date: {a.summary.get('start_date', 'unknown')[:10]})"
+        for a in acts
+    ]
     return (
-        "Summary of recent Strava activities (name, id, date):\n" +
-        "\n".join(lines) +
-        "\nIf you want to analyze a specific activity or time period, ask the user for more details."
+        "Summary of recent Strava activities (name, id, date):\n"
+        + "\n".join(lines)
+        + "\nIf you want to analyze a specific activity or time period, ask the user for more details."
     )
+
 
 def _format_activities_with_streams(acts):
     lines = []
@@ -202,11 +229,13 @@ def _format_activities_with_streams(acts):
         if a.streams:
             stream_types = list(a.streams.keys())
             line += f"streams: {', '.join(stream_types)}"
-            if 'watts' in a.streams and a.streams['watts'].get('data'):
-                max_watts = max(a.streams['watts']['data'])
+            if "watts" in a.streams and a.streams["watts"].get("data"):
+                max_watts = max(a.streams["watts"]["data"])
                 line += f", max watts: {max_watts}"
-            if 'heartrate' in a.streams and a.streams['heartrate'].get('data'):
-                avg_hr = sum(a.streams['heartrate']['data']) / len(a.streams['heartrate']['data'])
+            if "heartrate" in a.streams and a.streams["heartrate"].get("data"):
+                avg_hr = sum(a.streams["heartrate"]["data"]) / len(
+                    a.streams["heartrate"]["data"]
+                )
                 line += f", avg HR: {avg_hr:.1f}"
         else:
             line += "no streams"
@@ -217,12 +246,14 @@ def _format_activities_with_streams(acts):
 def _get_detailed_user_profile(db: Session, user: User) -> str:
     """Get comprehensive user profile information."""
     try:
-        profile: Profile | None = db.query(Profile).filter(Profile.id == user.id).first()
+        profile: Profile | None = (
+            db.query(Profile).filter(Profile.id == user.id).first()
+        )
         if not profile:
             return "No profile information available."
-        
+
         profile_info = []
-        
+
         # Basic info
         if profile.age:
             profile_info.append(f"Age: {profile.age} years")
@@ -232,180 +263,227 @@ def _get_detailed_user_profile(db: Session, user: User) -> str:
             profile_info.append(f"Weight: {profile.weight_lbs} lbs")
         if profile.height_ft and profile.height_in is not None:
             profile_info.append(f"Height: {profile.height_ft}'{profile.height_in}\"")
-        
+
         # Cycling specifics
         if profile.cycling_experience:
             profile_info.append(f"Cycling Experience: {profile.cycling_experience}")
         if profile.fitness_level:
             profile_info.append(f"Fitness Level: {profile.fitness_level}")
         if profile.weekly_training_hours:
-            profile_info.append(f"Weekly Training Hours: {profile.weekly_training_hours}")
-        
+            profile_info.append(
+                f"Weekly Training Hours: {profile.weekly_training_hours}"
+            )
+
         # Goals and preferences
         if profile.primary_goals:
             profile_info.append(f"Primary Goals: {profile.primary_goals}")
         if profile.training_preferences:
             profile_info.append(f"Training Preferences: {profile.training_preferences}")
         if profile.preferred_training_days:
-            profile_info.append(f"Preferred Training Days: {profile.preferred_training_days}")
-        
+            profile_info.append(
+                f"Preferred Training Days: {profile.preferred_training_days}"
+            )
+
         # Health considerations
         if profile.injury_history:
             profile_info.append(f"Injury History: {profile.injury_history}")
         if profile.medical_conditions:
             profile_info.append(f"Medical Conditions: {profile.medical_conditions}")
-        
+
         # Strava connection status
         strava_status = "Connected" if profile.strava_access_token else "Not connected"
         profile_info.append(f"Strava Status: {strava_status}")
-        
-        return "\n".join(profile_info) if profile_info else "Profile information not complete."
+
+        return (
+            "\n".join(profile_info)
+            if profile_info
+            else "Profile information not complete."
+        )
     except Exception:
         return "Unable to retrieve profile information."
 
-def _get_recent_activities_with_details(db: Session, user: User, limit: int = 10) -> str:
+
+def _get_recent_activities_with_details(
+    db: Session, user: User, limit: int = 10
+) -> str:
     """Get detailed recent activities including streams data."""
     try:
         # First, get all activities and sort by actual activity date from summary
         all_activities = (
-            db.query(StravaActivity)
-            .filter(StravaActivity.user_id == user.id)
-            .all()
+            db.query(StravaActivity).filter(StravaActivity.user_id == user.id).all()
         )
-        
+
         # Sort by actual activity start_date from summary data
         activities_with_dates = []
         for activity in all_activities:
-            if activity.summary and activity.summary.get('start_date'):
+            if activity.summary and activity.summary.get("start_date"):
                 activities_with_dates.append(activity)
-        
+
         # Sort by start_date (most recent first)
         activities_with_dates.sort(
-            key=lambda x: x.summary.get('start_date', ''), 
-            reverse=True
+            key=lambda x: x.summary.get("start_date", ""), reverse=True
         )
-        
+
         # Take the most recent activities
         activities = activities_with_dates[:limit]
-        
+
         if not activities:
             return "No Strava activities found in database. User should sync their Strava data."
-        
+
         # Check if data seems old
         from datetime import datetime, timedelta
-        most_recent_activity_date = activities[0].summary.get('start_date', '')[:10] if activities else ''
-        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d')
-        current_date = datetime.utcnow().strftime('%Y-%m-%d')
-        
+
+        most_recent_activity_date = (
+            activities[0].summary.get("start_date", "")[:10] if activities else ""
+        )
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        current_date = datetime.utcnow().strftime("%Y-%m-%d")
+
         # Debug logging
-        logging.info(f"Chat context: Found {len(activities)} activities, most recent: {most_recent_activity_date}, current date: {current_date}")
-        
+        logging.info(
+            f"Chat context: Found {len(activities)} activities, most recent: {most_recent_activity_date}, current date: {current_date}"
+        )
+
         # Log first few activity dates for debugging
         for i, act in enumerate(activities[:5]):
-            act_date = act.summary.get('start_date', 'Unknown')[:10] if act.summary else 'Unknown'
-            act_name = act.name or 'Unnamed'
+            act_date = (
+                act.summary.get("start_date", "Unknown")[:10]
+                if act.summary
+                else "Unknown"
+            )
+            act_name = act.name or "Unnamed"
             logging.info(f"Activity {i+1}: {act_name} - {act_date}")
-        
+
         data_freshness_note = ""
         if most_recent_activity_date < thirty_days_ago:
             data_freshness_note = f"\n⚠️ **Note: Most recent activity is from {most_recent_activity_date} (current: {current_date}). User should sync recent Strava data to get the latest activities.**\n"
-        
+
         activity_details = []
         for activity in activities:
             details = []
-            
+
             # Basic activity info with clear date formatting
             activity_name = activity.name or "Unnamed Activity"
-            activity_date = activity.summary.get('start_date', 'Unknown date')[:10] if activity.summary else 'Unknown date'
-            
+            activity_date = (
+                activity.summary.get("start_date", "Unknown date")[:10]
+                if activity.summary
+                else "Unknown date"
+            )
+
             # Convert date to more readable format for AI matching
             date_display = activity_date
-            if activity_date != 'Unknown date':
+            if activity_date != "Unknown date":
                 try:
                     from datetime import datetime
-                    parsed_date = datetime.strptime(activity_date, '%Y-%m-%d')
-                    date_display = f"{activity_date} ({parsed_date.strftime('%B %d, %Y')})"
+
+                    parsed_date = datetime.strptime(activity_date, "%Y-%m-%d")
+                    date_display = (
+                        f"{activity_date} ({parsed_date.strftime('%B %d, %Y')})"
+                    )
                 except:
                     date_display = activity_date
-            
+
             details.append(f"**{activity_name}** (ID: {activity.id})")
             details.append(f"**Date: {date_display}**")
-            
+
             # Summary data
             if activity.summary:
                 summary = activity.summary
-                if summary.get('distance'):
+                if summary.get("distance"):
                     details.append(f"Distance: {summary['distance']/1000:.1f} km")
-                if summary.get('moving_time'):
-                    hours = summary['moving_time'] // 3600
-                    minutes = (summary['moving_time'] % 3600) // 60
+                if summary.get("moving_time"):
+                    hours = summary["moving_time"] // 3600
+                    minutes = (summary["moving_time"] % 3600) // 60
                     details.append(f"Moving Time: {hours:02d}:{minutes:02d}")
-                if summary.get('average_speed'):
-                    details.append(f"Avg Speed: {summary['average_speed']*3.6:.1f} km/h")
-                if summary.get('average_watts'):
+                if summary.get("average_speed"):
+                    details.append(
+                        f"Avg Speed: {summary['average_speed']*3.6:.1f} km/h"
+                    )
+                if summary.get("average_watts"):
                     details.append(f"Avg Power: {summary['average_watts']:.0f}W")
-                if summary.get('average_heartrate'):
+                if summary.get("average_heartrate"):
                     details.append(f"Avg HR: {summary['average_heartrate']:.0f} bpm")
-                if summary.get('average_cadence'):
+                if summary.get("average_cadence"):
                     details.append(f"Avg Cadence: {summary['average_cadence']:.0f} rpm")
-                if summary.get('total_elevation_gain'):
+                if summary.get("total_elevation_gain"):
                     details.append(f"Elevation: {summary['total_elevation_gain']:.0f}m")
-            
+
             # Streams data availability and detailed metrics
             if activity.streams:
                 available_streams = list(activity.streams.keys())
-                details.append(f"**Detailed stream data available:** {', '.join(available_streams)}")
-                
+                details.append(
+                    f"**Detailed stream data available:** {', '.join(available_streams)}"
+                )
+
                 # Detailed stream analysis with emphasis on cadence
                 streams = activity.streams
-                
+
                 # CADENCE - Prioritize this for user queries
-                if 'cadence' in streams and streams['cadence'].get('data'):
-                    cadence_data = streams['cadence']['data']
+                if "cadence" in streams and streams["cadence"].get("data"):
+                    cadence_data = streams["cadence"]["data"]
                     # Filter out zero values for more accurate averages
                     non_zero_cadence = [c for c in cadence_data if c > 0]
                     if non_zero_cadence:
                         avg_cadence = sum(non_zero_cadence) / len(non_zero_cadence)
                         max_cadence = max(cadence_data)
-                        min_cadence = min([c for c in cadence_data if c > 0]) if non_zero_cadence else 0
-                        details.append(f"**CADENCE DETAILED:** avg {avg_cadence:.1f} rpm, max {max_cadence:.0f} rpm, min {min_cadence:.0f} rpm ({len(non_zero_cadence)} data points)")
+                        min_cadence = (
+                            min([c for c in cadence_data if c > 0])
+                            if non_zero_cadence
+                            else 0
+                        )
+                        details.append(
+                            f"**CADENCE DETAILED:** avg {avg_cadence:.1f} rpm, max {max_cadence:.0f} rpm, min {min_cadence:.0f} rpm ({len(non_zero_cadence)} data points)"
+                        )
                     else:
                         details.append("**CADENCE:** No valid cadence data recorded")
                 else:
                     details.append("**CADENCE:** Not available in streams")
-                
+
                 # POWER
-                if 'watts' in streams and streams['watts'].get('data'):
-                    power_data = streams['watts']['data']
+                if "watts" in streams and streams["watts"].get("data"):
+                    power_data = streams["watts"]["data"]
                     non_zero_power = [p for p in power_data if p > 0]
                     if non_zero_power:
                         avg_power = sum(non_zero_power) / len(non_zero_power)
                         max_power = max(power_data)
-                        details.append(f"**POWER DETAILED:** avg {avg_power:.0f}W, max {max_power:.0f}W ({len(non_zero_power)} data points)")
-                
-                # HEART RATE  
-                if 'heartrate' in streams and streams['heartrate'].get('data'):
-                    hr_data = streams['heartrate']['data']
+                        details.append(
+                            f"**POWER DETAILED:** avg {avg_power:.0f}W, max {max_power:.0f}W ({len(non_zero_power)} data points)"
+                        )
+
+                # HEART RATE
+                if "heartrate" in streams and streams["heartrate"].get("data"):
+                    hr_data = streams["heartrate"]["data"]
                     non_zero_hr = [hr for hr in hr_data if hr > 0]
                     if non_zero_hr:
                         avg_hr = sum(non_zero_hr) / len(non_zero_hr)
                         max_hr = max(hr_data)
-                        min_hr = min([hr for hr in hr_data if hr > 0]) if non_zero_hr else 0
-                        details.append(f"**HEART RATE DETAILED:** avg {avg_hr:.0f} bpm, max {max_hr:.0f} bpm, min {min_hr:.0f} bpm")
+                        min_hr = (
+                            min([hr for hr in hr_data if hr > 0]) if non_zero_hr else 0
+                        )
+                        details.append(
+                            f"**HEART RATE DETAILED:** avg {avg_hr:.0f} bpm, max {max_hr:.0f} bpm, min {min_hr:.0f} bpm"
+                        )
             else:
-                details.append("**NO DETAILED STREAMS DATA** - Only basic summary available")
-            
+                details.append(
+                    "**NO DETAILED STREAMS DATA** - Only basic summary available"
+                )
+
             activity_details.append("\n".join(details))
-        
+
         # Add clear context about what's included
-        context_header = f"## 📊 YOUR COMPLETE STRAVA ACTIVITY DATA{data_freshness_note}\n\n"
+        context_header = (
+            f"## 📊 YOUR COMPLETE STRAVA ACTIVITY DATA{data_freshness_note}\n\n"
+        )
         context_header += f"**Current Date: {current_date}** - Only activities from July 2024 should be considered 'recent'\n\n"
         context_header += "**⚠️ IMPORTANT: This is ALL the data you have access to. Use this data to answer questions.**\n"
-        context_header += f"**Found {len(activities)} activities with detailed metrics below:**\n\n"
-        
+        context_header += (
+            f"**Found {len(activities)} activities with detailed metrics below:**\n\n"
+        )
+
         return context_header + "\n\n".join(activity_details)
     except Exception as e:
         return f"Error retrieving activity details: {str(e)[:100]}"
+
 
 def _get_detailed_training_plan(db: Session, user: User) -> str:
     """Get comprehensive training plan information."""
@@ -415,53 +493,65 @@ def _get_detailed_training_plan(db: Session, user: User) -> str:
         )
         if not plan:
             return "No training plan created yet."
-        
+
         plan_details = []
         plan_details.append("## Current Training Plan")
-        
+
         if plan.details:
             details = plan.details
-            
+
             # Weekly structure
-            if details.get('weekly_training_hours'):
-                plan_details.append(f"Weekly Training Hours: {details['weekly_training_hours']}")
-            if details.get('goal'):
+            if details.get("weekly_training_hours"):
+                plan_details.append(
+                    f"Weekly Training Hours: {details['weekly_training_hours']}"
+                )
+            if details.get("goal"):
                 plan_details.append(f"Primary Goal: {details['goal']}")
-            
+
             # Weekly schedule if available
-            if details.get('weekly_schedule'):
+            if details.get("weekly_schedule"):
                 plan_details.append("Weekly Schedule:")
-                for day, workout in details['weekly_schedule'].items():
+                for day, workout in details["weekly_schedule"].items():
                     plan_details.append(f"  {day}: {workout}")
-            
+
             # Training zones if available
-            if details.get('training_zones'):
+            if details.get("training_zones"):
                 plan_details.append("Training Zones:")
-                for zone, description in details['training_zones'].items():
+                for zone, description in details["training_zones"].items():
                     plan_details.append(f"  {zone}: {description}")
-            
+
             # Current phase if available
-            if details.get('current_phase'):
-                plan_details.append(f"Current Training Phase: {details['current_phase']}")
-            
+            if details.get("current_phase"):
+                plan_details.append(
+                    f"Current Training Phase: {details['current_phase']}"
+                )
+
             # Additional details
             for key, value in details.items():
-                if key not in ['weekly_training_hours', 'goal', 'weekly_schedule', 'training_zones', 'current_phase']:
+                if key not in [
+                    "weekly_training_hours",
+                    "goal",
+                    "weekly_schedule",
+                    "training_zones",
+                    "current_phase",
+                ]:
                     plan_details.append(f"{key.replace('_', ' ').title()}: {value}")
-        
+
         plan_details.append(f"Plan created: {plan.created_at.strftime('%Y-%m-%d')}")
         plan_details.append(f"Last updated: {plan.updated_at.strftime('%Y-%m-%d')}")
-        
+
         return "\n".join(plan_details)
     except Exception:
         return "Unable to retrieve training plan details."
 
+
 def _system_context_for_user(db: Session, user: User) -> ChatMessage:
     """Build a comprehensive system message with all user data for OpenAI."""
     from datetime import datetime
-    current_date = datetime.utcnow().strftime('%Y-%m-%d')
-    current_datetime = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-    
+
+    current_date = datetime.utcnow().strftime("%Y-%m-%d")
+    current_datetime = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
     content_sections = [
         "🚨🚨🚨 MANDATORY SYSTEM OVERRIDE 🚨🚨🚨",
         "",
@@ -478,7 +568,7 @@ def _system_context_for_user(db: Session, user: User) -> ChatMessage:
         "",
         "🛑 NEVER EVER SAY:",
         "❌ 'I don't have access to your data'",
-        "❌ 'I need you to provide/share your data'", 
+        "❌ 'I need you to provide/share your data'",
         "❌ 'Can you provide me with...'",
         "❌ 'If you can share your activities...'",
         "❌ 'Check your cycling device...'",
@@ -511,7 +601,7 @@ def _system_context_for_user(db: Session, user: User) -> ChatMessage:
         "### User Profile",
         _get_detailed_user_profile(db, user),
         "",
-        "### Training Plan", 
+        "### Training Plan",
         _get_detailed_training_plan(db, user),
         "",
         "### 📊 COMPLETE ACTIVITY DATA - ANALYZE THIS FOR TRENDS",
@@ -557,10 +647,14 @@ def _system_context_for_user(db: Session, user: User) -> ChatMessage:
 
 # ---- Training plan updater --------------------------------------------------
 
-UPDATE_PATTERN = re.compile(r"change\s+(?P<field>[a-zA-Z_]+)\s+(?:to|=)\s+(?P<value>[\w\s]+)")
+UPDATE_PATTERN = re.compile(
+    r"change\s+(?P<field>[a-zA-Z_]+)\s+(?:to|=)\s+(?P<value>[\w\s]+)"
+)
 
 
-def _parse_and_update_training_plan(db: Session, user: User, message: str) -> tuple[bool, str]:
+def _parse_and_update_training_plan(
+    db: Session, user: User, message: str
+) -> tuple[bool, str]:
     """Detect update instructions and apply them. Returns (updated?, feedback)."""
     match = UPDATE_PATTERN.search(message.lower())
     if not match:
@@ -596,6 +690,7 @@ def _parse_and_update_training_plan(db: Session, user: User, message: str) -> tu
 
 # ---- Routes ----------------------------------------------------------------
 
+
 @router.post("/message", response_model=ChatResponse)
 def send_message(
     chat_request: ChatRequest,
@@ -615,8 +710,12 @@ def send_message(
         db.commit()
 
         # Check for training plan update in the last user message
-        last_user_content = chat_request.messages[-1].content if chat_request.messages else ""
-        updated, feedback_msg = _parse_and_update_training_plan(db, current_user, last_user_content)
+        last_user_content = (
+            chat_request.messages[-1].content if chat_request.messages else ""
+        )
+        updated, feedback_msg = _parse_and_update_training_plan(
+            db, current_user, last_user_content
+        )
         if updated:
             # Return immediate confirmation without OpenAI call
             assistant_msg_db = ChatMessageDB(
@@ -634,7 +733,10 @@ def send_message(
         cutoff_date = datetime.utcnow() - timedelta(days=HISTORY_DAYS)
         history_rows: List[ChatMessageDB] = (
             db.query(ChatMessageDB)
-            .filter(ChatMessageDB.user_id == current_user.id, ChatMessageDB.created_at >= cutoff_date)
+            .filter(
+                ChatMessageDB.user_id == current_user.id,
+                ChatMessageDB.created_at >= cutoff_date,
+            )
             .order_by(ChatMessageDB.created_at.asc())
             .all()
         )
@@ -644,30 +746,35 @@ def send_message(
         try:
             system_msg = _system_context_for_user(db, current_user)
             messages_for_openai.append(system_msg.dict())
-            
+
             # Debug logging to see what system message is being sent
             logging.info(f"System message length: {len(system_msg.content)} characters")
             logging.info(f"System message preview: {system_msg.content[:500]}...")
-            
+
         except Exception as e:
             # Fallback system message if context generation fails
             logging.error(f"Failed to generate system context: {e}")
-            fallback_msg = ChatMessage(role="system", content="You are Reroute AI, a friendly cycling training assistant.")
+            fallback_msg = ChatMessage(
+                role="system",
+                content="You are Reroute AI, a friendly cycling training assistant.",
+            )
             messages_for_openai.append(fallback_msg.dict())
-        
-        # Historical messages  
+
+        # Historical messages
         messages_for_openai.extend(
             {"role": m.role, "content": m.content} for m in history_rows
         )
-        
+
         # Add current user message (enhanced with data context)
         if chat_request.messages:
             last_user_message = chat_request.messages[-1]
             if last_user_message.role == "user":
                 try:
                     # Get user data for injection
-                    user_data_summary = _get_recent_activities_with_details(db, current_user, limit=20)
-                    
+                    user_data_summary = _get_recent_activities_with_details(
+                        db, current_user, limit=20
+                    )
+
                     # Enhance the user message with explicit data context
                     enhanced_content = f"""USER QUESTION: {last_user_message.content}
 
@@ -676,38 +783,40 @@ IMPORTANT CONTEXT FOR AI: You have access to the user's complete Strava activity
 {user_data_summary}
 
 Based on the activity data above, please answer the user's question: {last_user_message.content}"""
-                    
+
                     # Add the enhanced message
-                    messages_for_openai.append({
-                        "role": "user", 
-                        "content": enhanced_content
-                    })
-                    
-                    logging.info(f"Enhanced user message with {len(user_data_summary)} characters of activity data")
-                    
+                    messages_for_openai.append(
+                        {"role": "user", "content": enhanced_content}
+                    )
+
+                    logging.info(
+                        f"Enhanced user message with {len(user_data_summary)} characters of activity data"
+                    )
+
                 except Exception as e:
                     logging.error(f"Error enhancing user message: {e}")
                     # Fallback to original message
-                    messages_for_openai.append({
-                        "role": "user",
-                        "content": last_user_message.content
-                    })
+                    messages_for_openai.append(
+                        {"role": "user", "content": last_user_message.content}
+                    )
 
         # OpenAI completion
         try:
             logging.info(f"Sending {len(messages_for_openai)} messages to OpenAI")
-            logging.info(f"Message types: {[msg['role'] for msg in messages_for_openai]}")
-            
+            logging.info(
+                f"Message types: {[msg['role'] for msg in messages_for_openai]}"
+            )
+
             ai_content: str = openai_chat_service.chat_completion(
                 messages=messages_for_openai,
                 model=chat_request.model or "gpt-3.5-turbo",
                 max_tokens=chat_request.max_tokens or 1024,
                 temperature=chat_request.temperature or 0.7,
             )
-            
+
             logging.info(f"OpenAI response length: {len(ai_content)} characters")
             logging.info(f"OpenAI response preview: {ai_content[:200]}...")
-            
+
         except Exception as e:
             # Fallback response if OpenAI fails
             logging.error(f"OpenAI API error: {e}")
@@ -738,7 +847,10 @@ def get_history(
     cutoff_date = datetime.utcnow() - timedelta(days=HISTORY_DAYS)
     messages: List[ChatMessageDB] = (
         db.query(ChatMessageDB)
-        .filter(ChatMessageDB.user_id == current_user.id, ChatMessageDB.created_at >= cutoff_date)
+        .filter(
+            ChatMessageDB.user_id == current_user.id,
+            ChatMessageDB.created_at >= cutoff_date,
+        )
         .order_by(ChatMessageDB.created_at.asc())
         .all()
     )
@@ -761,4 +873,4 @@ def clear_history(
         .delete()
     )
     db.commit()
-    return {"message": f"Deleted {deleted} chat messages"} 
+    return {"message": f"Deleted {deleted} chat messages"}

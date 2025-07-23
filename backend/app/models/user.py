@@ -1,13 +1,27 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, DECIMAL, Text, JSON, ForeignKey, UUID
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    DECIMAL,
+    JSON,
+    UUID,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+
 from app.core.database import Base
-import uuid
+
 
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False)
     hashed_password = Column(String(1024), nullable=False)
@@ -17,14 +31,15 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     profile = relationship("Profile", back_populates="user", uselist=False)
     routes = relationship("Route", back_populates="user")
 
+
 class Profile(Base):
     __tablename__ = "profiles"
-    
+
     id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
     age = Column(Integer)
     gender = Column(String(50))
@@ -44,22 +59,23 @@ class Profile(Base):
     training_preferences = Column(JSON)
     current_fitness_assessment = Column(Text)
     profile_completed = Column(Boolean, default=False)
-    
+
     # Strava integration fields
     strava_user_id = Column(String(255))
     strava_access_token = Column(Text)
     strava_refresh_token = Column(Text)
     strava_token_expires_at = Column(DateTime)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationship
     user = relationship("User", back_populates="profile")
 
+
 class UserSession(Base):
     __tablename__ = "user_sessions"
-    
+
     id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     session_token = Column(String(255), unique=True, nullable=False, index=True)
@@ -69,6 +85,6 @@ class UserSession(Base):
     user_agent = Column(Text)
     ip_address = Column(String(45))
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relationship
-    user = relationship("User", backref="sessions") 
+    user = relationship("User", backref="sessions")

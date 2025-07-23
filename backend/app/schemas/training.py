@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from datetime import datetime, date
+from datetime import date, datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class WorkoutType(str, Enum):
@@ -32,7 +33,9 @@ class TrainingWeek(BaseModel):
 
 class TrainingPlanCreate(BaseModel):
     name: str = Field(..., description="Name of the training plan")
-    goal: str = Field(..., description="Training goal (e.g., General Fitness, Race Preparation)")
+    goal: str = Field(
+        ..., description="Training goal (e.g., General Fitness, Race Preparation)"
+    )
     weekly_hours: int = Field(..., description="Target weekly training hours")
     start_date: date = Field(..., description="Start date of the training plan")
 
@@ -57,5 +60,7 @@ class TrainingPlanListResponse(BaseModel):
 class GeneratePlanRequest(BaseModel):
     goal: str = Field(..., description="Training goal")
     weekly_hours: int = Field(..., description="Target weekly training hours")
-    fitness_level: Optional[str] = Field(None, description="Fitness level (beginner, intermediate, advanced)")
+    fitness_level: Optional[str] = Field(
+        None, description="Fitness level (beginner, intermediate, advanced)"
+    )
     preferences: Optional[List[str]] = Field(None, description="Training preferences")

@@ -1,38 +1,45 @@
 import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+from app.schemas.training import TrainingWeek, Workout, WorkoutType
 from app.services.openai_chat import openai_chat_service
-from app.schemas.training import WorkoutType, Workout, TrainingWeek
 
 
 class TrainingPlanGenerator:
     def __init__(self):
         self.openai_service = openai_chat_service
 
-    def generate_plan(self, goal: str, weekly_hours: int, fitness_level: str = "intermediate", preferences: List[str] = None, strava_data: dict = None) -> Dict[str, Any]:
+    def generate_plan(
+        self,
+        goal: str,
+        weekly_hours: int,
+        fitness_level: str = "intermediate",
+        preferences: List[str] = None,
+        strava_data: dict = None,
+    ) -> Dict[str, Any]:
         """Generate a training plan using OpenAI"""
-        
+
         # Create the prompt for OpenAI
-        prompt = self._create_generation_prompt(goal, weekly_hours, fitness_level, preferences, strava_data)
-        
+        prompt = self._create_generation_prompt(
+            goal, weekly_hours, fitness_level, preferences, strava_data
+        )
+
         # Generate the plan using OpenAI
         response = self.openai_service.chat_completion(
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert cycling coach. Generate structured training plans in JSON format."
+                    "content": "You are an expert cycling coach. Generate structured training plans in JSON format.",
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt},
             ],
             model="gpt-4",
             max_tokens=2000,
-            temperature=0.7
+            temperature=0.7,
         )
-        
+
         # Parse the response
         try:
             plan_data = self._parse_openai_response(response)
@@ -41,13 +48,20 @@ class TrainingPlanGenerator:
             # Fallback to a default plan if parsing fails
             return self._generate_fallback_plan(goal, weekly_hours)
 
-    def _create_generation_prompt(self, goal: str, weekly_hours: int, fitness_level: str, preferences: List[str] = None, strava_data: dict = None) -> str:
+    def _create_generation_prompt(
+        self,
+        goal: str,
+        weekly_hours: int,
+        fitness_level: str,
+        preferences: List[str] = None,
+        strava_data: dict = None,
+    ) -> str:
         """Create the prompt for OpenAI"""
-        
+
         preferences_text = ""
         if preferences:
             preferences_text = f"\nPreferences: {', '.join(preferences)}"
-        
+
         # Add Strava data to the prompt if available
         strava_text = ""
         if strava_data and strava_data.get("connected"):
@@ -56,7 +70,7 @@ class TrainingPlanGenerator:
             total_distance = strava_data.get("total_distance_m", 0)
             total_time = strava_data.get("total_time_s", 0)
             avg_heartrate = strava_data.get("avg_heartrate", 0)
-            
+
             strava_text = f"""
 
 STRAVA DATA ANALYSIS:
@@ -77,7 +91,7 @@ Recent Activity Details:
    - Elevation: {act.get('total_elevation_gain_m', 0):.0f} m
    - Avg HR: {act.get('average_heartrate', 'N/A')} bpm
 """
-            
+
             strava_text += f"""
 
 PERSONALIZATION GUIDELINES:
@@ -92,7 +106,7 @@ PERSONALIZATION GUIDELINES:
 
 Note: No Strava data available. Generating a general training plan.
 """
-        
+
         prompt = f"""
 Generate a 4-week cycling training plan with the following specifications:
 
@@ -150,35 +164,35 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
 
     def _parse_openai_response(self, response: str) -> Dict[str, Any]:
         """Parse the OpenAI response into structured plan data"""
-        
+
         # Try to extract JSON from the response
         try:
             # Look for JSON in the response
-            start_idx = response.find('{')
-            end_idx = response.rfind('}') + 1
-            
+            start_idx = response.find("{")
+            end_idx = response.rfind("}") + 1
+
             if start_idx == -1 or end_idx == 0:
                 raise ValueError("No JSON found in response")
-            
+
             json_str = response[start_idx:end_idx]
             plan_data = json.loads(json_str)
-            
+
             # Validate the structure
-            if 'weeks' not in plan_data:
+            if "weeks" not in plan_data:
                 raise ValueError("Invalid plan structure")
-            
+
             # Process each week to ensure proper formatting
-            for week in plan_data['weeks']:
-                if 'workouts' in week:
-                    for day, workout in week['workouts'].items():
+            for week in plan_data["weeks"]:
+                if "workouts" in week:
+                    for day, workout in week["workouts"].items():
                         # Ensure workout has required fields
-                        if 'id' not in workout:
-                            workout['id'] = str(uuid.uuid4())
-                        if 'completed' not in workout:
-                            workout['completed'] = False
-            
+                        if "id" not in workout:
+                            workout["id"] = str(uuid.uuid4())
+                        if "completed" not in workout:
+                            workout["completed"] = False
+
             return plan_data
-            
+
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in response: {e}")
         except Exception as e:
@@ -186,15 +200,15 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
 
     def _generate_fallback_plan(self, goal: str, weekly_hours: int) -> Dict[str, Any]:
         """Generate a fallback plan if OpenAI fails"""
-        
+
         # Calculate daily distribution
         daily_hours = weekly_hours / 6  # 6 days of training, 1 rest day
         daily_minutes = int(daily_hours * 60)
-        
+
         # Create a simple 4-week plan
         weeks = []
         current_date = datetime.now().date()
-        
+
         for week_num in range(4):
             week_start = current_date + timedelta(weeks=week_num)
             week_workouts = {
@@ -207,7 +221,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 50,
                     "ftp_percentage_max": 65,
                     "details": "Easy ride in Zone 1, <65% FTP to promote recovery.",
-                    "completed": False
+                    "completed": False,
                 },
                 "tuesday": {
                     "id": str(uuid.uuid4()),
@@ -218,7 +232,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 65,
                     "ftp_percentage_max": 85,
                     "details": "Steady ride in Zone 2, 65-75% FTP to build aerobic capacity.",
-                    "completed": False
+                    "completed": False,
                 },
                 "wednesday": {
                     "id": str(uuid.uuid4()),
@@ -229,7 +243,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 91,
                     "ftp_percentage_max": 105,
                     "details": "Warm-up followed by 4 x 8 min intervals in Zone 4, 91-105% FTP with 4 min recovery between.",
-                    "completed": False
+                    "completed": False,
                 },
                 "thursday": {
                     "id": str(uuid.uuid4()),
@@ -240,7 +254,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 50,
                     "ftp_percentage_max": 65,
                     "details": "Easy recovery ride to promote recovery.",
-                    "completed": False
+                    "completed": False,
                 },
                 "friday": {
                     "id": str(uuid.uuid4()),
@@ -251,7 +265,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 65,
                     "ftp_percentage_max": 85,
                     "details": "Steady ride in Zone 2, 65-75% FTP to build aerobic capacity.",
-                    "completed": False
+                    "completed": False,
                 },
                 "saturday": {
                     "id": str(uuid.uuid4()),
@@ -262,7 +276,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": 106,
                     "ftp_percentage_max": 120,
                     "details": "Warm-up followed by 5 x 3 min intervals in Zone 5, 106-120% FTP with 3 min recovery between.",
-                    "completed": False
+                    "completed": False,
                 },
                 "sunday": {
                     "id": str(uuid.uuid4()),
@@ -273,15 +287,14 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "ftp_percentage_min": None,
                     "ftp_percentage_max": None,
                     "details": "Complete rest to allow for recovery and adaptation.",
-                    "completed": False
-                }
+                    "completed": False,
+                },
             }
-            
-            weeks.append({
-                "week_start_date": week_start.isoformat(),
-                "workouts": week_workouts
-            })
-        
+
+            weeks.append(
+                {"week_start_date": week_start.isoformat(), "workouts": week_workouts}
+            )
+
         return {"weeks": weeks}
 
 

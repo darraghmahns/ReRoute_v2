@@ -1,47 +1,48 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     # OpenAI Configuration
     OPENAI_API_KEY: str = "changeme"
-    
+
     # Strava Configuration
     STRAVA_CLIENT_ID: str = "changeme"
     STRAVA_CLIENT_SECRET: str = "changeme"
     STRAVA_WEBHOOK_SECRET: str = "changeme"
     # IMPORTANT: This must match your frontend port (default: 3000)
     STRAVA_REDIRECT_URI: str = "changeme"
-    
+
     # Stripe Configuration
     STRIPE_API_KEY: str = "changeme"
     STRIPE_WEBHOOK_SECRET: str = "changeme"
-    
+
     # Mapbox Configuration
     MAPBOX_API_KEY: str = "changeme"
-    
+
     # Twilio Configuration
     TWILIO_ACCOUNT_SID: str = "changeme"
     TWILIO_AUTH_TOKEN: str = "changeme"
     TWILIO_VERIFY_SERVICE_SID: str = "changeme"
-    
+
     # S3 Configuration
     S3_ENDPOINT_URL: str = "changeme"
     S3_ACCESS_KEY: str = "changeme"
     S3_SECRET_KEY: str = "changeme"
     S3_BUCKET_NAME: str = "changeme"
-    
+
     # Database Configuration
     POSTGRES_DB: str = "reroute_db"
     POSTGRES_USER: str = "reroute_user"
     POSTGRES_PASSWORD: str = "reroute_pass"
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
-    
+
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379/0"
-    
+
     # GraphHopper Configuration
     GRAPHHOPPER_BASE_URL: str = "https://reroute-graphhopper-server.onrender.com"
-    
+
     # Security Configuration
     SECRET_KEY: str = "your-super-secret-key-change-this-in-production"
     ALGORITHM: str = "HS256"
@@ -53,4 +54,5 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-settings = Settings() 
+
+settings = Settings()
