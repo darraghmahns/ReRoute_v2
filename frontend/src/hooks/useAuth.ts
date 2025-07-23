@@ -5,6 +5,7 @@ import * as authService from '../services/auth';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  authLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -15,17 +16,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true); // Initial auth check
+  const [loading, setLoading] = useState(false); // For login/register/logout
 
   const refreshUser = useCallback(async () => {
-    setLoading(true);
+    setAuthLoading(true);
     try {
       const u = await authService.getCurrentUser();
       setUser(u);
     } catch {
       setUser(null);
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   }, []);
 
@@ -33,33 +35,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (authService.getToken()) {
       refreshUser();
     } else {
-      setLoading(false);
+      setAuthLoading(false);
     }
   }, [refreshUser]);
 
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
-    await authService.login(credentials);
-    await refreshUser();
-    setLoading(false);
+    try {
+      await authService.login(credentials);
+      await refreshUser();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (data: RegisterData) => {
     setLoading(true);
-    await authService.register(data);
-    setLoading(false);
+    try {
+      await authService.register(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
     setLoading(true);
-    await authService.logout();
-    setUser(null);
-    setLoading(false);
+    try {
+      await authService.logout();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const value = {
     user,
     loading,
+    authLoading,
     login,
     register,
     logout,

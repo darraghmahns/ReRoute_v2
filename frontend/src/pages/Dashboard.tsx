@@ -15,24 +15,36 @@ interface StatCardProps {
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color }) => (
-  <Card className="bg-reroute-card border-reroute-card">
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-400">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {change && (
-            <p className="text-xs text-green-400 mt-1">{change}</p>
-          )}
+const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color }) => {
+  // Determine if the change is positive, negative, or neutral
+  const isPositive = change && change.includes('+');
+  const isNegative = change && change.includes('-');
+  
+  return (
+    <Card className="bg-reroute-card border-reroute-card">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-400">{title}</p>
+            <p className="text-2xl font-bold text-white">{value}</p>
+            {change && (
+              <p className={`text-xs mt-1 ${
+                isPositive ? 'text-green-400' : 
+                isNegative ? 'text-red-400' : 
+                'text-gray-400'
+              }`}>
+                {change}
+              </p>
+            )}
+          </div>
+          <div className={`p-3 rounded-full ${color}`}>
+            {icon}
+          </div>
         </div>
-        <div className={`p-3 rounded-full ${color}`}>
-          {icon}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 interface RecentActivity {
   id: string;
@@ -76,9 +88,17 @@ const Dashboard: React.FC = () => {
   // Group activities by week
   const weekStart = selectedWeekStart;
   const weekEnd = getSunday(weekStart);
+  const previousWeekStart = subWeeks(weekStart, 1);
+  const previousWeekEnd = getSunday(previousWeekStart);
+  
   const activitiesThisWeek = activities.filter(activity => {
     const activityDate = new Date(activity.start_date);
     return isWithinInterval(activityDate, { start: weekStart, end: weekEnd });
+  });
+
+  const activitiesPreviousWeek = activities.filter(activity => {
+    const activityDate = new Date(activity.start_date);
+    return isWithinInterval(activityDate, { start: previousWeekStart, end: previousWeekEnd });
   });
 
   // Calculate stats from activities
@@ -88,19 +108,38 @@ const Dashboard: React.FC = () => {
         weeklyDistance: '0 mi',
         weeklyTime: '0 hrs',
         calories: '0',
-        routesCompleted: '0'
+        routesCompleted: '0',
+        distanceChange: '0%',
+        timeChange: '0 hrs',
+        caloriesChange: '0%',
+        activitiesChange: '0'
       };
     }
 
     const totalDistanceMiles = activitiesThisWeek.reduce((sum, activity) => sum + metersToMiles(activity.distance_m || 0), 0);
-    const totalTime = activitiesThisWeek.reduce((sum, activity) => sum + (activity.moving_time_s || 0), 0) / 3600;
-    const totalCalories = activitiesThisWeek.length * 300; // Rough estimate
+    const totalTime = activitiesThisWeek.reduce((sum, activity) => sum + (activity.moving_time_s || 0) / 3600, 0);
+    const totalCalories = activitiesThisWeek.reduce((sum, activity) => sum + (activity.calories || 300), 0);
+
+    // Calculate previous week stats for comparison
+    const prevDistanceMiles = activitiesPreviousWeek.reduce((sum, activity) => sum + metersToMiles(activity.distance_m || 0), 0);
+    const prevTime = activitiesPreviousWeek.reduce((sum, activity) => sum + (activity.moving_time_s || 0) / 3600, 0);
+    const prevCalories = activitiesPreviousWeek.reduce((sum, activity) => sum + (activity.calories || 300), 0);
+
+    // Calculate percentage changes
+    const distanceChange = prevDistanceMiles > 0 ? ((totalDistanceMiles - prevDistanceMiles) / prevDistanceMiles * 100) : 0;
+    const timeChange = prevTime > 0 ? (totalTime - prevTime) : 0; // Show hours difference, not percentage
+    const caloriesChange = prevCalories > 0 ? ((totalCalories - prevCalories) / prevCalories * 10) : 0;
+    const activitiesChange = activitiesPreviousWeek.length > 0 ? (activitiesThisWeek.length - activitiesPreviousWeek.length) : activitiesThisWeek.length;
 
     return {
       weeklyDistance: `${isNaN(totalDistanceMiles) ? '0.0' : totalDistanceMiles.toFixed(1)} mi`,
       weeklyTime: `${isNaN(totalTime) ? '0.0' : totalTime.toFixed(1)} hrs`,
       calories: totalCalories.toLocaleString(),
-      routesCompleted: activitiesThisWeek.length.toString()
+      routesCompleted: activitiesThisWeek.length.toString(),
+      distanceChange: `${distanceChange >= 0 ? '+' : ''}${distanceChange.toFixed(1)}%`,
+      timeChange: `${timeChange >= 0 ? '+' : ''}${timeChange.toFixed(1)} hrs`,
+      caloriesChange: `${caloriesChange >= 0 ? '+' : ''}${caloriesChange.toFixed(1)}%`,
+      activitiesChange: `${activitiesChange >= 0 ? '+' : ''}${activitiesChange.toString()}`
     };
   };
 
@@ -190,28 +229,28 @@ const Dashboard: React.FC = () => {
           <StatCard
             title="This Week"
             value={stats.weeklyDistance}
-            change="+12% from last week"
+            change={stats.distanceChange}
             icon={<Activity className="w-6 h-6 text-white" />}
             color="bg-reroute-primary"
           />
           <StatCard
             title="Training Time"
             value={stats.weeklyTime}
-            change="+2.3 hrs from last week"
+            change={stats.timeChange}
             icon={<Clock className="w-6 h-6 text-white" />}
             color="bg-reroute-green"
           />
           <StatCard
             title="Calories Burned"
             value={stats.calories}
-            change="+15% from last week"
+            change={stats.caloriesChange}
             icon={<Zap className="w-6 h-6 text-white" />}
             color="bg-reroute-yellow"
           />
           <StatCard
             title="Activities"
             value={stats.routesCompleted}
-            change="+3 from last week"
+            change={stats.activitiesChange}
             icon={<Route className="w-6 h-6 text-white" />}
             color="bg-reroute-purple"
           />

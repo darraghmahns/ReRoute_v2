@@ -1,0 +1,148 @@
+# Cloud Build configuration for CI/CD
+steps:
+  # Install backend dependencies and run tests
+  - name: 'python:3.11'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd backend
+        pip install poetry
+        poetry config virtualenvs.create false
+        poetry install
+        poetry run black --check .
+        poetry run isort --check-only .
+        poetry run flake8 .
+        poetry run mypy .
+        poetry run pytest
+    id: 'backend-test'
+
+  # Install frontend dependencies and run tests
+  - name: 'node:20'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd frontend
+        npm ci
+        npm run lint
+        npm run typecheck
+        npm run format:check
+        npm run build
+    id: 'frontend-test'
+
+  # Build GraphHopper service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/reroute-graphhopper:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/reroute-graphhopper:latest'
+      - './reroute-graphhopper-server'
+    id: 'build-graphhopper'
+    waitFor: ['-']
+
+  # Build main application image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/reroute-app:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/reroute-app:latest'
+      - '.'
+    id: 'build-app'
+    waitFor: ['backend-test', 'frontend-test']
+
+  # Push GraphHopper image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/reroute-graphhopper']
+    id: 'push-graphhopper'
+    waitFor: ['build-graphhopper']
+
+  # Push main app image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/reroute-app']
+    id: 'push-app'
+    waitFor: ['build-app']
+
+  # Deploy GraphHopper to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'reroute-graphhopper'
+      - '--image=gcr.io/$PROJECT_ID/reroute-graphhopper:$COMMIT_SHA'
+      - '--region=$_REGION'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=2Gi'
+      - '--cpu=1'
+      - '--timeout=900s'
+      - '--max-instances=10'
+      - '--min-instances=0'
+    id: 'deploy-graphhopper'
+    waitFor: ['push-graphhopper']
+
+  # Deploy main application to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'reroute-app'
+      - '--image=gcr.io/$PROJECT_ID/reroute-app:$COMMIT_SHA'
+      - '--region=$_REGION'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--timeout=300s'
+      - '--max-instances=100'
+      - '--min-instances=0'
+      - '--add-cloudsql-instances=${_DB_INSTANCE_CONNECTION_NAME}'
+      - '--set-env-vars=DATABASE_URL=postgresql://reroute-user:${_DB_PASSWORD}@localhost:5432/reroute?host=/cloudsql/${_DB_INSTANCE_CONNECTION_NAME}'
+      - '--set-env-vars=REDIS_URL=redis://${_REDIS_HOST}:6379'
+      - '--set-env-vars=ENVIRONMENT=production'
+      - '--set-secrets=SECRET_KEY=SECRET_KEY:latest'
+      - '--set-secrets=OPENAI_API_KEY=OPENAI_API_KEY:latest'
+      - '--set-secrets=STRAVA_CLIENT_ID=STRAVA_CLIENT_ID:latest'
+      - '--set-secrets=STRAVA_CLIENT_SECRET=STRAVA_CLIENT_SECRET:latest'
+    id: 'deploy-app'
+    waitFor: ['push-app', 'deploy-graphhopper']
+
+  # Run database migrations
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Get the service URL
+        SERVICE_URL=$(gcloud run services describe reroute-app --region=$_REGION --format="value(status.url)")
+        
+        # Trigger database migration endpoint
+        curl -X POST "$SERVICE_URL/admin/migrate" \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)"
+    id: 'migrate-db'
+    waitFor: ['deploy-app']
+
+# Substitution variables
+substitutions:
+  _REGION: 'us-central1'
+  _DB_INSTANCE_CONNECTION_NAME: 'PROJECT_ID:REGION:reroute-postgres'
+  _DB_PASSWORD: 'PLACEHOLDER'  # Will be replaced with actual password
+  _REDIS_HOST: 'PLACEHOLDER'   # Will be replaced with actual Redis host
+
+# Build configuration
+options:
+  machineType: 'E2_HIGHCPU_8'
+  substitution_option: 'ALLOW_LOOSE'
+  logging: CLOUD_LOGGING_ONLY
+
+# Images to be pushed
+images:
+  - 'gcr.io/$PROJECT_ID/reroute-app:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/reroute-graphhopper:$COMMIT_SHA'
+
+# Build timeout
+timeout: '1800s'

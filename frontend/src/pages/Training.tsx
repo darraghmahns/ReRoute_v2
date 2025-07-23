@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Target, TrendingUp, Play, CheckCircle, Award, BookOpen, Zap, ChevronLeft, ChevronRight, Heart, Dumbbell, Activity, Zap as ZapIcon } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, Play, CheckCircle, Zap, ChevronLeft, ChevronRight, Heart, Dumbbell, Activity, Zap as ZapIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { trainingService } from '../services/training';
-import { TrainingPlan, Workout, TrainingWeek } from '../types';
+import type { TrainingPlan, Workout, TrainingWeek } from '../types';
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -110,7 +110,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, day, onClick }) => {
 };
 
 const Training: React.FC = () => {
-  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+
   const [currentPlan, setCurrentPlan] = useState<TrainingPlan | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
@@ -131,7 +131,6 @@ const Training: React.FC = () => {
     try {
       setLoading(true);
       const userPlans = await trainingService.getPlans();
-      setPlans(userPlans);
       
       // Set the most recent active plan as current
       const activePlan = userPlans.find(plan => plan.is_active) || userPlans[0];
@@ -148,13 +147,16 @@ const Training: React.FC = () => {
   const generateNewPlan = async () => {
     try {
       setGenerating(true);
+      setShowGenerateModal(false); // Close modal immediately
+      
       const newPlan = await trainingService.generatePlan(generateForm);
-      setPlans(prev => [newPlan, ...prev]);
+      
       setCurrentPlan(newPlan);
       setCurrentWeekIndex(0);
-      setShowGenerateModal(false);
     } catch (error) {
       console.error('Failed to generate plan:', error);
+      // Reopen modal on error so user can try again
+      setShowGenerateModal(true);
     } finally {
       setGenerating(false);
     }
@@ -506,6 +508,23 @@ const Training: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Global Loading Overlay */}
+      {generating && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-reroute-card border border-reroute-card rounded-lg p-8 text-center max-w-md mx-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-reroute-primary mx-auto mb-6"></div>
+            <h3 className="text-xl font-bold text-white mb-4">Generating Your Training Plan</h3>
+            <p className="text-gray-300 mb-4">
+              Our AI is analyzing your Strava data and creating a personalized training plan just for you.
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
+              <div className="animate-pulse">●</div>
+              <span>Analyzing your recent activities</span>
+            </div>
+          </div>
         </div>
       )}
     </div>

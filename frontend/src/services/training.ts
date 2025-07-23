@@ -1,5 +1,5 @@
 import { getToken } from './auth';
-import { TrainingPlan, GeneratePlanRequest } from '../types';
+import type { TrainingPlan, GeneratePlanRequest, TrainingWeek } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -53,7 +53,7 @@ export const trainingService = {
     return response.json();
   },
 
-  async getWeekPlan(planId: string, weekStartDate: string): Promise<any> {
+  async getWeekPlan(planId: string, weekStartDate: string): Promise<TrainingWeek> {
     const token = getToken();
     const response = await fetch(`${API_URL}/training/plans/${planId}/week/${weekStartDate}`, {
       headers: {

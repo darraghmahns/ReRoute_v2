@@ -2,7 +2,7 @@ import requests
 import json
 import time
 
-base_url = "http://localhost:8000"
+base_url = "http://localhost:8002"
 
 def test_strava_integration():
     print("🧪 Testing Strava Integration")

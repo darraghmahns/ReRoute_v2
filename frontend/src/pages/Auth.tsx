@@ -8,21 +8,25 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import { loginSchema, registerSchema, type LoginFormData, type RegisterFormData } from '../lib/validations';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, login, register, loading } = useAuth();
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, login, register, loading, authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user && !loading) {
+    // Only redirect if user is set, not loading, and there is no error
+    if (user && !loading && !error) {
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
-  }, [user, loading, navigate, location]);
+  }, [user, loading, error, navigate, location]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -45,40 +49,50 @@ const Auth: React.FC = () => {
   const onSubmitLogin = async (data: LoginFormData) => {
     try {
       setError(null);
+      setSuccess(null);
+      setIsSubmitting(true);
       await login(data);
-      // Redirect to the page they were trying to access, or dashboard
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      setSuccess('Login successful! Redirecting...');
+      // Do not navigate here; let useEffect handle it after user is set
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsSubmitting(false); // Always reset submitting state
     }
   };
 
   const onSubmitRegister = async (data: RegisterFormData) => {
     try {
       setError(null);
+      setSuccess(null);
+      setIsSubmitting(true);
       await register({
         email: data.email,
         password: data.password,
         full_name: data.full_name,
       });
+      setSuccess('Account created successfully! Please sign in.');
       // After successful registration, switch to login
       setIsLogin(true);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError(null);
+    setSuccess(null);
+    setIsSubmitting(false); // Reset submitting state when switching modes
     loginForm.reset();
     registerForm.reset();
   };
 
-  // Show loading if checking authentication
-  if (loading) {
+  // Show loading if checking authentication (initial page load only)
+  if (authLoading) {
     return (
       <div className="min-h-full flex items-center justify-center bg-reroute-gradient">
         <div className="text-center">
@@ -89,7 +103,7 @@ const Auth: React.FC = () => {
     );
   }
 
-  // Don't render the form if user is already authenticated
+  // Dont render the form if user is already authenticated
   if (user) {
     return null;
   }
@@ -117,8 +131,16 @@ const Auth: React.FC = () => {
 
           <CardContent>
             {error && (
-              <div className="mb-4 p-3 bg-reroute-red/10 border border-reroute-red/20 rounded-md">
-                <p className="text-sm text-reroute-red">{error}</p>
+              <div className="mb-4 p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-50/20 rounded-md flex items-start space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-green-500">{success}</p>
               </div>
             )}
 
@@ -131,11 +153,13 @@ const Auth: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     {...loginForm.register('email')}
-                    className={`${loginForm.formState.errors.email ? 'border-reroute-red' : 'border-reroute-gray'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${loginForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
                   {loginForm.formState.errors.email && (
-                    <p className="text-sm text-reroute-red">
-                      {loginForm.formState.errors.email.message}
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{loginForm.formState.errors.email.message}</span>
                     </p>
                   )}
                 </div>
@@ -147,21 +171,30 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Enter your password"
                     {...loginForm.register('password')}
-                    className={`${loginForm.formState.errors.password ? 'border-reroute-red' : 'border-reroute-gray'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${loginForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
                   {loginForm.formState.errors.password && (
-                    <p className="text-sm text-reroute-red">
-                      {loginForm.formState.errors.password.message}
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{loginForm.formState.errors.password.message}</span>
                     </p>
                   )}
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white"
-                  disabled={loading}
+                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50"
+                  disabled={isSubmitting || loading}
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
                 </Button>
               </form>
             ) : (
@@ -173,11 +206,13 @@ const Auth: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     {...registerForm.register('email')}
-                    className={`${registerForm.formState.errors.email ? 'border-reroute-red' : 'border-reroute-gray'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.email && (
-                    <p className="text-sm text-reroute-red">
-                      {registerForm.formState.errors.email.message}
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{registerForm.formState.errors.email.message}</span>
                     </p>
                   )}
                 </div>
@@ -189,8 +224,15 @@ const Auth: React.FC = () => {
                     type="text"
                     placeholder="Enter your full name"
                     {...registerForm.register('full_name')}
-                    className="border-reroute-gray bg-reroute-card text-white placeholder-gray-400"
+                    className={`${registerForm.formState.errors.full_name ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
+                  {registerForm.formState.errors.full_name && (
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{registerForm.formState.errors.full_name.message}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -200,11 +242,13 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Enter your password"
                     {...registerForm.register('password')}
-                    className={`${registerForm.formState.errors.password ? 'border-reroute-red' : 'border-reroute-gray'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.password && (
-                    <p className="text-sm text-reroute-red">
-                      {registerForm.formState.errors.password.message}
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{registerForm.formState.errors.password.message}</span>
                     </p>
                   )}
                 </div>
@@ -216,21 +260,30 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Confirm your password"
                     {...registerForm.register('confirmPassword')}
-                    className={`${registerForm.formState.errors.confirmPassword ? 'border-reroute-red' : 'border-reroute-gray'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.confirmPassword ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-reroute-red">
-                      {registerForm.formState.errors.confirmPassword.message}
+                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{registerForm.formState.errors.confirmPassword.message}</span>
                     </p>
                   )}
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white"
-                  disabled={loading}
+                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50"
+                  disabled={isSubmitting || loading}
                 >
-                  {loading ? 'Creating account...' : 'Sign Up'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Sign Up"
+                  )}
                 </Button>
               </form>
             )}
@@ -242,6 +295,7 @@ const Auth: React.FC = () => {
               variant="ghost"
               onClick={toggleMode}
               className="w-full text-reroute-primary hover:text-reroute-primary/80 hover:bg-reroute-card"
+              disabled={isSubmitting}
             >
               {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
             </Button>

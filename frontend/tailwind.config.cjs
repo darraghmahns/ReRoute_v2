@@ -22,6 +22,8 @@ module.exports = {
         'reroute-yellow': '#fde68a',
         'reroute-purple': '#a78bfa',
         'reroute-gray': '#e5e7eb',
+        'reroute-tab-active': '#a6c9d6',
+        'reroute-tabbar': '#223a6b',
       },
       backgroundImage: {
         'reroute-gradient': 'linear-gradient(135deg, #0e1a2b 0%, #1a2e5c 50%, #223a6b 100%)',

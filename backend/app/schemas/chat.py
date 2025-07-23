@@ -8,7 +8,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[ChatMessage] = Field(..., description="Conversation history including the new user message")
     model: Optional[str] = Field("gpt-3.5-turbo", description="OpenAI model to use")
-    max_tokens: Optional[int] = Field(256, description="Maximum tokens in the response")
+    max_tokens: Optional[int] = Field(1024, description="Maximum tokens in the response")
     temperature: Optional[float] = Field(0.7, description="Sampling temperature")
 
 class ChatResponse(BaseModel):

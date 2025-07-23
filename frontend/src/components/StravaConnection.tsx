@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { getStravaAuthUrl, disconnectStrava, syncStravaActivities } from '../services/strava';
+import { getStravaAuthUrl, disconnectStrava, syncStravaActivities, refreshStravaActivities } from '../services/strava';
 import { Button } from './ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { Activity, Unlink, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Activity, Unlink, RefreshCw, CheckCircle, AlertCircle, Database } from 'lucide-react';
 
 interface StravaConnectionProps {
   isConnected: boolean;
@@ -17,6 +17,7 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
@@ -106,6 +107,27 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
     }
   };
 
+  const handleFullRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setMessage(null);
+      
+      const result = await refreshStravaActivities();
+      
+      setMessageType('success');
+      setMessage(`Full refresh complete! Cleared ${result.deleted_count} old activities, added ${result.added_count} fresh activities.`);
+      
+      // Clear message after 8 seconds (longer for full refresh)
+      setTimeout(() => setMessage(null), 8000);
+      
+    } catch (error) {
+      setMessageType('error');
+      setMessage(error instanceof Error ? error.message : 'Failed to refresh activities from Strava.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -143,7 +165,7 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!isConnected ? (
             <Button
               onClick={handleConnect}
@@ -165,7 +187,7 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
             <>
               <Button
                 onClick={handleSync}
-                disabled={syncing}
+                disabled={syncing || refreshing}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -177,8 +199,21 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
                 Sync Activities
               </Button>
               <Button
+                onClick={handleFullRefresh}
+                disabled={syncing || refreshing}
+                variant="outline"
+                className="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+              >
+                {refreshing ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Database className="w-4 h-4" />
+                )}
+                Full Refresh
+              </Button>
+              <Button
                 onClick={handleDisconnect}
-                disabled={loading}
+                disabled={loading || syncing || refreshing}
                 variant="outline"
                 className="flex items-center gap-2 text-red-600 hover:text-red-700"
               >
@@ -194,9 +229,13 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
         </div>
 
         {/* Info */}
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 space-y-1">
           {isConnected ? (
-            <p>Connected to Strava. Your activities will be synced automatically.</p>
+            <>
+              <p>Connected to Strava. Your activities will be synced automatically.</p>
+              <p><strong>Sync Activities:</strong> Updates existing activities and adds new ones.</p>
+              <p><strong>Full Refresh:</strong> Clears all data and re-syncs everything. Use when AI analyzes old data or activities seem stale.</p>
+            </>
           ) : (
             <p>Connect your Strava account to sync your cycling activities and get personalized insights.</p>
           )}

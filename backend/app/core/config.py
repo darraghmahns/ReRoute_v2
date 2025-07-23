@@ -39,10 +39,15 @@ class Settings(BaseSettings):
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379/0"
     
+    # GraphHopper Configuration
+    GRAPHHOPPER_BASE_URL: str = "https://reroute-graphhopper-server.onrender.com"
+    
     # Security Configuration
     SECRET_KEY: str = "your-super-secret-key-change-this-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    SESSION_EXPIRE_HOURS: int = 1
+    SESSION_REFRESH_THRESHOLD_MINUTES: int = 15
 
     class Config:
         env_file = ".env"

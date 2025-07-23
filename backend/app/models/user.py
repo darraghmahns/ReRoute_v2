@@ -18,8 +18,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationship
+    # Relationships
     profile = relationship("Profile", back_populates="user", uselist=False)
+    routes = relationship("Route", back_populates="user")
 
 class Profile(Base):
     __tablename__ = "profiles"
@@ -54,4 +55,20 @@ class Profile(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship
-    user = relationship("User", back_populates="profile") 
+    user = relationship("User", back_populates="profile")
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    
+    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    session_token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    last_activity = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    user_agent = Column(Text)
+    ip_address = Column(String(45))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = relationship("User", backref="sessions") 

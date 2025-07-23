@@ -10,11 +10,11 @@ class TrainingPlanGenerator:
     def __init__(self):
         self.openai_service = openai_chat_service
 
-    def generate_plan(self, goal: str, weekly_hours: int, fitness_level: str = "intermediate", preferences: List[str] = None) -> Dict[str, Any]:
+    def generate_plan(self, goal: str, weekly_hours: int, fitness_level: str = "intermediate", preferences: List[str] = None, strava_data: dict = None) -> Dict[str, Any]:
         """Generate a training plan using OpenAI"""
         
         # Create the prompt for OpenAI
-        prompt = self._create_generation_prompt(goal, weekly_hours, fitness_level, preferences)
+        prompt = self._create_generation_prompt(goal, weekly_hours, fitness_level, preferences, strava_data)
         
         # Generate the plan using OpenAI
         response = self.openai_service.chat_completion(
@@ -41,19 +41,64 @@ class TrainingPlanGenerator:
             # Fallback to a default plan if parsing fails
             return self._generate_fallback_plan(goal, weekly_hours)
 
-    def _create_generation_prompt(self, goal: str, weekly_hours: int, fitness_level: str, preferences: List[str] = None) -> str:
+    def _create_generation_prompt(self, goal: str, weekly_hours: int, fitness_level: str, preferences: List[str] = None, strava_data: dict = None) -> str:
         """Create the prompt for OpenAI"""
         
         preferences_text = ""
         if preferences:
             preferences_text = f"\nPreferences: {', '.join(preferences)}"
         
+        # Add Strava data to the prompt if available
+        strava_text = ""
+        if strava_data and strava_data.get("connected"):
+            activities = strava_data.get("recent_activities", [])
+            activity_types = strava_data.get("activity_types", {})
+            total_distance = strava_data.get("total_distance_m", 0)
+            total_time = strava_data.get("total_time_s", 0)
+            avg_heartrate = strava_data.get("avg_heartrate", 0)
+            
+            strava_text = f"""
+
+STRAVA DATA ANALYSIS:
+- Recent Activities: {len(activities)} activities analyzed
+- Total Distance: {total_distance/1000:.1f} km
+- Total Time: {total_time/3600:.1f} hours
+- Average Heart Rate: {avg_heartrate:.0f} bpm
+- Activity Types: {', '.join([f'{k} ({v})' for k, v in activity_types.items()])}
+
+Recent Activity Details:
+"""
+            for i, act in enumerate(activities[:3], 1):  # Show last 3 activities
+                strava_text += f"""
+{i}. {act.get('name', 'Unknown Activity')}
+   - Type: {act.get('type', 'Unknown')}
+   - Distance: {act.get('distance_m', 0)/1000:.1f} km
+   - Duration: {act.get('moving_time_s', 0)/60:.0f} minutes
+   - Elevation: {act.get('total_elevation_gain_m', 0):.0f} m
+   - Avg HR: {act.get('average_heartrate', 'N/A')} bpm
+"""
+            
+            strava_text += f"""
+
+PERSONALIZATION GUIDELINES:
+- Consider the user's recent activity patterns and performance
+- Build upon their current fitness level based on recent activities
+- Account for their preferred activity types and distances
+- Use their average heart rate zones to inform training intensity
+- Consider their recent performance trends for progression planning
+"""
+        else:
+            strava_text = """
+
+Note: No Strava data available. Generating a general training plan.
+"""
+        
         prompt = f"""
 Generate a 4-week cycling training plan with the following specifications:
 
 Goal: {goal}
 Weekly Hours: {weekly_hours}
-Fitness Level: {fitness_level}{preferences_text}
+Fitness Level: {fitness_level}{preferences_text}{strava_text}
 
 Requirements:
 - Create exactly 4 weeks of training
@@ -62,6 +107,7 @@ Requirements:
 - Include rest days and recovery
 - Use proper training zones and FTP percentages
 - Include variety in workout types
+- Personalize based on the user's Strava data when available
 
 Workout Types:
 - RECOVERY: Easy rides, <65% FTP

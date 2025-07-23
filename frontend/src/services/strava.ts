@@ -25,6 +25,13 @@ export interface StravaSyncResponse {
   activities: Record<string, unknown>[];
 }
 
+export interface StravaRefreshResponse {
+  message: string;
+  deleted_count: number;
+  added_count: number;
+  sample_activities: Record<string, unknown>[];
+}
+
 export interface StravaActivitiesResponse {
   activities: StravaActivity[];
   count: number;
@@ -55,6 +62,14 @@ export const handleStravaCallback = async (code: string): Promise<StravaAuthResp
 // Sync activities from Strava
 export const syncStravaActivities = async (): Promise<StravaSyncResponse> => {
   const res = await axios.post(`${API_URL}/strava/sync`, {}, {
+    headers: getAuthHeaders(),
+  });
+  return res.data;
+};
+
+// Full refresh: Clear all activities and re-sync from Strava
+export const refreshStravaActivities = async (): Promise<StravaRefreshResponse> => {
+  const res = await axios.post(`${API_URL}/strava/sync/refresh`, {}, {
     headers: getAuthHeaders(),
   });
   return res.data;

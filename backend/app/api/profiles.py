@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileCreate, ProfileUpdate, ProfileResponse, ProfileCompleteRequest
 from app.core.database import get_db
-from app.core.security import get_current_active_user
+from app.core.security import get_current_active_user_by_session
 from app.models.user import User, Profile
 from typing import Optional
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 @router.get("/me", response_model=ProfileResponse)
-def get_profile(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+def get_profile(current_user: User = Depends(get_current_active_user_by_session), db: Session = Depends(get_db)):
     """Get current user profile"""
     profile = db.query(Profile).filter(Profile.id == current_user.id).first()
     if not profile:
@@ -22,7 +22,7 @@ def get_profile(current_user: User = Depends(get_current_active_user), db: Sessi
 @router.put("/me", response_model=ProfileResponse)
 def update_profile(
     profile_update: ProfileUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db)
 ):
     """Update profile"""
@@ -43,7 +43,7 @@ def update_profile(
 @router.post("/complete", response_model=ProfileResponse)
 def complete_profile(
     completion_request: ProfileCompleteRequest,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db)
 ):
     """Complete profile setup - multi-step wizard"""
@@ -94,7 +94,7 @@ def complete_profile(
     return profile
 
 @router.delete("/me")
-def delete_profile(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+def delete_profile(current_user: User = Depends(get_current_active_user_by_session), db: Session = Depends(get_db)):
     """Delete profile"""
     profile = db.query(Profile).filter(Profile.id == current_user.id).first()
     if profile:
