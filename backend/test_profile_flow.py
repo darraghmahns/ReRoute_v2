@@ -1,11 +1,13 @@
 import json
 import time
 
+import pytest
 import requests
 
 base_url = "http://localhost:8000"
 
 
+@pytest.mark.integration
 def test_profile_flow():
     print("🧪 Testing Full Profile Management Flow")
     print("=" * 50)

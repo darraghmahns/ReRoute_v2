@@ -1,11 +1,12 @@
 import time
 
+import pytest
 import requests
 
 BASE_URL = "http://localhost:8000"
 
 
-# Helper to register and login a user, returns access token
+@pytest.mark.integration
 def get_access_token():
     unique_email = f"chat{int(time.time())}@example.com"
     register_data = {
@@ -20,6 +21,7 @@ def get_access_token():
     return response.json()["access_token"]
 
 
+@pytest.mark.integration
 def test_chat_message():
     print("\n🧪 Testing /chat/message endpoint")
     token = get_access_token()
@@ -34,6 +36,7 @@ def test_chat_message():
     assert isinstance(data["message"]["content"], str)
 
 
+@pytest.mark.integration
 def test_chat_history_and_clear():
     print("\n🧪 Testing /chat/history and /chat/history DELETE endpoints")
     token = get_access_token()

@@ -1,11 +1,13 @@
 import json
 import time
 
+import pytest
 import requests
 
 base_url = "http://localhost:8002"
 
 
+@pytest.mark.integration
 def test_strava_integration():
     print("🧪 Testing Strava Integration")
     print("=" * 50)

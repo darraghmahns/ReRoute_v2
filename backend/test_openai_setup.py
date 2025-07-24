@@ -2,6 +2,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 # Add the app directory to the Python path
 sys.path.append(str(Path(__file__).parent / "app"))
 
@@ -10,6 +12,7 @@ import openai
 from app.core.config import settings
 
 
+@pytest.mark.integration
 def test_openai_configuration():
     """Test OpenAI configuration and basic API connectivity"""
     print("🧪 Testing OpenAI Configuration")
@@ -44,6 +47,7 @@ def test_openai_configuration():
         return False
 
 
+@pytest.mark.integration
 def test_environment_loading():
     """Test that environment variables are loading correctly"""
     print("\n🔧 Testing Environment Configuration")

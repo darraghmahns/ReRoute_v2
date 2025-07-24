@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
 import requests
 
 # Add the app directory to the Python path
@@ -10,6 +11,7 @@ sys.path.append(str(Path(__file__).parent / "app"))
 from app.core.config import settings
 
 
+@pytest.mark.integration
 def test_strava_configuration():
     """Test Strava configuration and basic API connectivity"""
     print("🧪 Testing Strava Configuration")
@@ -42,6 +44,7 @@ def test_strava_configuration():
         return False
 
 
+@pytest.mark.integration
 def test_mapbox_configuration():
     """Test Mapbox configuration"""
     print("\n🗺️  Testing Mapbox Configuration")
@@ -72,6 +75,7 @@ def test_mapbox_configuration():
         return False
 
 
+@pytest.mark.integration
 def test_environment_loading():
     """Test that environment variables are loading correctly"""
     print("\n🔧 Testing Environment Configuration")
