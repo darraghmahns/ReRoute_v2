@@ -44,48 +44,28 @@ resource "google_project_service" "secret_manager_api" {
   service = "secretmanager.googleapis.com"
 }
 
-# Cloud SQL Instance
-resource "google_sql_database_instance" "postgres" {
-  name             = "reroute-db"
-  database_version = "POSTGRES_15"
-  region           = var.region
-  deletion_protection = false
-
-  settings {
-    tier = "db-f1-micro"
-    
-    ip_configuration {
-      ipv4_enabled    = true
-      authorized_networks {
-        value = "0.0.0.0/0"
-        name  = "all"
-      }
-    }
-    
-    backup_configuration {
-      enabled = true
-    }
-  }
+# Use existing Cloud SQL Instance
+data "google_sql_database_instance" "postgres" {
+  name = "reroute-db"
 }
 
 # Database
 resource "google_sql_database" "database" {
   name     = "reroute_db"
-  instance = google_sql_database_instance.postgres.name
+  instance = data.google_sql_database_instance.postgres.name
 }
 
 # Database User
 resource "google_sql_user" "user" {
   name     = "reroute_user"
-  instance = google_sql_database_instance.postgres.name
+  instance = data.google_sql_database_instance.postgres.name
   password = var.db_password
 }
 
-# Redis Instance
-resource "google_redis_instance" "cache" {
-  name           = "reroute-cache"
-  memory_size_gb = 1
-  region         = var.region
+# Use existing Redis Instance
+data "google_redis_instance" "cache" {
+  name   = "reroute-cache"
+  region = var.region
 }
 
 # Use existing secrets (data sources instead of resources)
@@ -101,23 +81,22 @@ data "google_secret_manager_secret" "secret_key" {
   secret_id = "SECRET_KEY"
 }
 
-# Service Account for Cloud Run
-resource "google_service_account" "cloud_run_sa" {
-  account_id   = "reroute-cloud-run"
-  display_name = "Reroute Cloud Run Service Account"
+# Use existing Service Account for Cloud Run
+data "google_service_account" "cloud_run_sa" {
+  account_id = "reroute-cloud-run"
 }
 
 # IAM bindings for service account
 resource "google_project_iam_member" "cloud_run_sa_sql_client" {
   project = var.project_id
   role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+  member  = "serviceAccount:${data.google_service_account.cloud_run_sa.email}"
 }
 
 resource "google_project_iam_member" "cloud_run_sa_secret_accessor" {
   project = var.project_id
   role    = "roles/secretmanager.secretAccessor"
-  member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+  member  = "serviceAccount:${data.google_service_account.cloud_run_sa.email}"
 }
 
 # Cloud Run Service
@@ -126,7 +105,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
   location = var.region
 
   template {
-    service_account = google_service_account.cloud_run_sa.email
+    service_account = data.google_service_account.cloud_run_sa.email
     
     containers {
       image = "gcr.io/${var.project_id}/${var.service_name}:latest"
@@ -144,7 +123,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
       
       env {
         name  = "POSTGRES_HOST"
-        value = google_sql_database_instance.postgres.private_ip_address
+        value = data.google_sql_database_instance.postgres.private_ip_address
       }
       
       env {
@@ -164,7 +143,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
       
       env {
         name  = "REDIS_URL"
-        value = "redis://${google_redis_instance.cache.host}:${google_redis_instance.cache.port}/0"
+        value = "redis://${data.google_redis_instance.cache.host}:${data.google_redis_instance.cache.port}/0"
       }
       
       env {
@@ -235,9 +214,9 @@ output "service_url" {
 }
 
 output "database_ip" {
-  value = google_sql_database_instance.postgres.private_ip_address
+  value = data.google_sql_database_instance.postgres.private_ip_address
 }
 
 output "redis_host" {
-  value = google_redis_instance.cache.host
+  value = data.google_redis_instance.cache.host
 }
