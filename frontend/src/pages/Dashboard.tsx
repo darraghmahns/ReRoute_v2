@@ -1,11 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Target, Clock, Zap, Route, Activity, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import {
+  Calendar,
+  TrendingUp,
+  Target,
+  Clock,
+  Zap,
+  Route,
+  Activity,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useStrava } from '../hooks/useStrava';
 import { getCurrentUserWithProfile } from '../services/auth';
 import MapboxActivityMap from '../components/MapboxActivityMap';
-import { startOfWeek, endOfWeek, isWithinInterval, subWeeks, addWeeks, format } from 'date-fns';
+import {
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  subWeeks,
+  addWeeks,
+  format,
+} from 'date-fns';
 
 interface StatCardProps {
   title: string;
@@ -15,11 +38,17 @@ interface StatCardProps {
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color }) => {
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  change,
+  icon,
+  color,
+}) => {
   // Determine if the change is positive, negative, or neutral
   const isPositive = change && change.includes('+');
   const isNegative = change && change.includes('-');
-  
+
   return (
     <Card className="bg-reroute-card border-reroute-card">
       <CardContent className="p-6">
@@ -28,18 +57,20 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color }
             <p className="text-sm font-medium text-gray-400">{title}</p>
             <p className="text-2xl font-bold text-white">{value}</p>
             {change && (
-              <p className={`text-xs mt-1 ${
-                isPositive ? 'text-green-400' : 
-                isNegative ? 'text-red-400' : 
-                'text-gray-400'
-              }`}>
+              <p
+                className={`text-xs mt-1 ${
+                  isPositive
+                    ? 'text-green-400'
+                    : isNegative
+                      ? 'text-red-400'
+                      : 'text-gray-400'
+                }`}
+              >
                 {change}
               </p>
             )}
           </div>
-          <div className={`p-3 rounded-full ${color}`}>
-            {icon}
-          </div>
+          <div className={`p-3 rounded-full ${color}`}>{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -69,8 +100,12 @@ const getSunday = (date: Date) => endOfWeek(date, { weekStartsOn: 1 });
 const Dashboard: React.FC = () => {
   const { activities, loading, error, syncActivities } = useStrava();
   const [stravaConnected, setStravaConnected] = useState(false);
-  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
-  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(getMonday(new Date()));
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(
+    null
+  );
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(
+    getMonday(new Date())
+  );
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -90,15 +125,18 @@ const Dashboard: React.FC = () => {
   const weekEnd = getSunday(weekStart);
   const previousWeekStart = subWeeks(weekStart, 1);
   const previousWeekEnd = getSunday(previousWeekStart);
-  
-  const activitiesThisWeek = activities.filter(activity => {
+
+  const activitiesThisWeek = activities.filter((activity) => {
     const activityDate = new Date(activity.start_date);
     return isWithinInterval(activityDate, { start: weekStart, end: weekEnd });
   });
 
-  const activitiesPreviousWeek = activities.filter(activity => {
+  const activitiesPreviousWeek = activities.filter((activity) => {
     const activityDate = new Date(activity.start_date);
-    return isWithinInterval(activityDate, { start: previousWeekStart, end: previousWeekEnd });
+    return isWithinInterval(activityDate, {
+      start: previousWeekStart,
+      end: previousWeekEnd,
+    });
   });
 
   // Calculate stats from activities
@@ -112,24 +150,51 @@ const Dashboard: React.FC = () => {
         distanceChange: '0%',
         timeChange: '0 hrs',
         caloriesChange: '0%',
-        activitiesChange: '0'
+        activitiesChange: '0',
       };
     }
 
-    const totalDistanceMiles = activitiesThisWeek.reduce((sum, activity) => sum + metersToMiles(activity.distance_m || 0), 0);
-    const totalTime = activitiesThisWeek.reduce((sum, activity) => sum + (activity.moving_time_s || 0) / 3600, 0);
-    const totalCalories = activitiesThisWeek.reduce((sum, activity) => sum + (activity.calories || 300), 0);
+    const totalDistanceMiles = activitiesThisWeek.reduce(
+      (sum, activity) => sum + metersToMiles(activity.distance_m || 0),
+      0
+    );
+    const totalTime = activitiesThisWeek.reduce(
+      (sum, activity) => sum + (activity.moving_time_s || 0) / 3600,
+      0
+    );
+    const totalCalories = activitiesThisWeek.reduce(
+      (sum, activity) => sum + (activity.calories || 300),
+      0
+    );
 
     // Calculate previous week stats for comparison
-    const prevDistanceMiles = activitiesPreviousWeek.reduce((sum, activity) => sum + metersToMiles(activity.distance_m || 0), 0);
-    const prevTime = activitiesPreviousWeek.reduce((sum, activity) => sum + (activity.moving_time_s || 0) / 3600, 0);
-    const prevCalories = activitiesPreviousWeek.reduce((sum, activity) => sum + (activity.calories || 300), 0);
+    const prevDistanceMiles = activitiesPreviousWeek.reduce(
+      (sum, activity) => sum + metersToMiles(activity.distance_m || 0),
+      0
+    );
+    const prevTime = activitiesPreviousWeek.reduce(
+      (sum, activity) => sum + (activity.moving_time_s || 0) / 3600,
+      0
+    );
+    const prevCalories = activitiesPreviousWeek.reduce(
+      (sum, activity) => sum + (activity.calories || 300),
+      0
+    );
 
     // Calculate percentage changes
-    const distanceChange = prevDistanceMiles > 0 ? ((totalDistanceMiles - prevDistanceMiles) / prevDistanceMiles * 100) : 0;
-    const timeChange = prevTime > 0 ? (totalTime - prevTime) : 0; // Show hours difference, not percentage
-    const caloriesChange = prevCalories > 0 ? ((totalCalories - prevCalories) / prevCalories * 10) : 0;
-    const activitiesChange = activitiesPreviousWeek.length > 0 ? (activitiesThisWeek.length - activitiesPreviousWeek.length) : activitiesThisWeek.length;
+    const distanceChange =
+      prevDistanceMiles > 0
+        ? ((totalDistanceMiles - prevDistanceMiles) / prevDistanceMiles) * 100
+        : 0;
+    const timeChange = prevTime > 0 ? totalTime - prevTime : 0; // Show hours difference, not percentage
+    const caloriesChange =
+      prevCalories > 0
+        ? ((totalCalories - prevCalories) / prevCalories) * 10
+        : 0;
+    const activitiesChange =
+      activitiesPreviousWeek.length > 0
+        ? activitiesThisWeek.length - activitiesPreviousWeek.length
+        : activitiesThisWeek.length;
 
     return {
       weeklyDistance: `${isNaN(totalDistanceMiles) ? '0.0' : totalDistanceMiles.toFixed(1)} mi`,
@@ -139,29 +204,41 @@ const Dashboard: React.FC = () => {
       distanceChange: `${distanceChange >= 0 ? '+' : ''}${distanceChange.toFixed(1)}%`,
       timeChange: `${timeChange >= 0 ? '+' : ''}${timeChange.toFixed(1)} hrs`,
       caloriesChange: `${caloriesChange >= 0 ? '+' : ''}${caloriesChange.toFixed(1)}%`,
-      activitiesChange: `${activitiesChange >= 0 ? '+' : ''}${activitiesChange.toString()}`
+      activitiesChange: `${activitiesChange >= 0 ? '+' : ''}${activitiesChange.toString()}`,
     };
   };
 
   const stats = calculateStats();
 
   const recentActivities: RecentActivity[] = activitiesThisWeek
-    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    )
     .slice(0, 10)
-    .map(activity => ({
+    .map((activity) => ({
       id: activity.id,
       title: activity.name,
       distance: `${activity.distance_m != null ? metersToMiles(activity.distance_m).toFixed(1) : '0.0'} mi`,
       duration: `${activity.moving_time_s != null ? Math.floor(activity.moving_time_s / 60) : 0}m`,
-      elevation: activity.total_elevation_gain_m != null ? `${metersToFeet(activity.total_elevation_gain_m).toFixed(0)} ft` : undefined,
+      elevation:
+        activity.total_elevation_gain_m != null
+          ? `${metersToFeet(activity.total_elevation_gain_m).toFixed(0)} ft`
+          : undefined,
       type: activity?.type || '',
-      calories: activity?.calories != null ? `${Math.round(activity.calories)} kcal` : undefined,
-      average_heartrate: activity?.average_heartrate != null ? `${Math.round(activity.average_heartrate)} bpm` : undefined,
-      date: new Date(activity.start_date).toLocaleDateString('en-US', { 
-        month: 'short', 
+      calories:
+        activity?.calories != null
+          ? `${Math.round(activity.calories)} kcal`
+          : undefined,
+      average_heartrate:
+        activity?.average_heartrate != null
+          ? `${Math.round(activity.average_heartrate)} bpm`
+          : undefined,
+      date: new Date(activity.start_date).toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         hour: 'numeric',
-        minute: '2-digit'
+        minute: '2-digit',
       }),
       map: activity.map,
     }));
@@ -174,7 +251,9 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-              <p className="text-gray-400 mt-2">Welcome back! Here's your cycling overview.</p>
+              <p className="text-gray-400 mt-2">
+                Welcome back! Here's your cycling overview.
+              </p>
             </div>
             {stravaConnected && (
               <Button
@@ -204,7 +283,8 @@ const Dashboard: React.FC = () => {
                     Connect to Strava
                   </p>
                   <p className="text-xs text-yellow-600">
-                    Connect your Strava account to see your real cycling data and get personalized insights.
+                    Connect your Strava account to see your real cycling data
+                    and get personalized insights.
                   </p>
                 </div>
                 <Button size="sm" className="ml-auto">
@@ -266,18 +346,25 @@ const Dashboard: React.FC = () => {
                   <Button
                     size="icon"
                     className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition"
-                    onClick={() => setSelectedWeekStart(subWeeks(selectedWeekStart, 1))}
+                    onClick={() =>
+                      setSelectedWeekStart(subWeeks(selectedWeekStart, 1))
+                    }
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                   <span className="text-sm text-gray-300">
-                    {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+                    {format(weekStart, 'MMM d')} -{' '}
+                    {format(weekEnd, 'MMM d, yyyy')}
                   </span>
                   <Button
                     size="icon"
                     className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition"
-                    onClick={() => setSelectedWeekStart(addWeeks(selectedWeekStart, 1))}
-                    disabled={addWeeks(selectedWeekStart, 1) > getMonday(new Date())}
+                    onClick={() =>
+                      setSelectedWeekStart(addWeeks(selectedWeekStart, 1))
+                    }
+                    disabled={
+                      addWeeks(selectedWeekStart, 1) > getMonday(new Date())
+                    }
                   >
                     <ChevronRight className="w-5 h-5" />
                   </Button>
@@ -288,7 +375,9 @@ const Dashboard: React.FC = () => {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <RefreshCw className="w-6 h-6 animate-spin text-reroute-primary" />
-                  <span className="ml-2 text-gray-400">Loading activities...</span>
+                  <span className="ml-2 text-gray-400">
+                    Loading activities...
+                  </span>
                 </div>
               ) : recentActivities.length > 0 ? (
                 <div className="space-y-4">
@@ -296,7 +385,13 @@ const Dashboard: React.FC = () => {
                     <div
                       key={activity.id}
                       className={`flex flex-col cursor-pointer rounded-lg transition-colors ${expandedActivityId === activity.id ? 'bg-reroute-primary/10' : 'bg-reroute-card'}`}
-                      onClick={() => setExpandedActivityId(expandedActivityId === activity.id ? null : activity.id)}
+                      onClick={() =>
+                        setExpandedActivityId(
+                          expandedActivityId === activity.id
+                            ? null
+                            : activity.id
+                        )
+                      }
                     >
                       <div className="flex items-center justify-between p-3">
                         <div className="flex items-center gap-3">
@@ -304,24 +399,39 @@ const Dashboard: React.FC = () => {
                             <Activity className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <p className="text-white font-medium">{activity.title}</p>
+                            <p className="text-white font-medium">
+                              {activity.title}
+                            </p>
                             <p className="text-sm text-gray-400">
-                              {activity.distance} • {activity.duration}{activity.elevation ? ` • ${activity.elevation}` : ''}
+                              {activity.distance} • {activity.duration}
+                              {activity.elevation
+                                ? ` • ${activity.elevation}`
+                                : ''}
                               {activity.type ? ` • ${activity.type}` : ''}
-                              {activity.calories ? ` • ${activity.calories}` : ''}
-                              {activity.average_heartrate ? ` • ${activity.average_heartrate}` : ''}
+                              {activity.calories
+                                ? ` • ${activity.calories}`
+                                : ''}
+                              {activity.average_heartrate
+                                ? ` • ${activity.average_heartrate}`
+                                : ''}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-400">{activity.date}</p>
+                          <p className="text-sm text-gray-400">
+                            {activity.date}
+                          </p>
                         </div>
                       </div>
-                      {expandedActivityId === activity.id && activity.map?.summary_polyline && (
-                        <div className="w-full px-3 pb-3">
-                          <MapboxActivityMap summary_polyline={activity.map.summary_polyline} height={180} />
-                        </div>
-                      )}
+                      {expandedActivityId === activity.id &&
+                        activity.map?.summary_polyline && (
+                          <div className="w-full px-3 pb-3">
+                            <MapboxActivityMap
+                              summary_polyline={activity.map.summary_polyline}
+                              height={180}
+                            />
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -330,7 +440,9 @@ const Dashboard: React.FC = () => {
                   <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-400">No activities yet</p>
                   {!stravaConnected && (
-                    <p className="text-sm text-gray-500 mt-2">Connect to Strava to see your activities</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Connect to Strava to see your activities
+                    </p>
                   )}
                 </div>
               )}
@@ -344,19 +456,31 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-3">
-                <Button className="w-full justify-start text-white" variant="outline">
+                <Button
+                  className="w-full justify-start text-white"
+                  variant="outline"
+                >
                   <Route className="w-4 h-4 mr-2" />
                   Generate New Route
                 </Button>
-                <Button className="w-full justify-start text-white" variant="outline">
+                <Button
+                  className="w-full justify-start text-white"
+                  variant="outline"
+                >
                   <Target className="w-4 h-4 mr-2" />
                   Create Training Plan
                 </Button>
-                <Button className="w-full justify-start text-white" variant="outline">
+                <Button
+                  className="w-full justify-start text-white"
+                  variant="outline"
+                >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
-                <Button className="w-full justify-start text-white" variant="outline">
+                <Button
+                  className="w-full justify-start text-white"
+                  variant="outline"
+                >
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Workout
                 </Button>
@@ -369,4 +493,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

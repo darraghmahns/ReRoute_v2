@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -26,7 +23,8 @@ module.exports = {
         'reroute-tabbar': '#223a6b',
       },
       backgroundImage: {
-        'reroute-gradient': 'linear-gradient(135deg, #0e1a2b 0%, #1a2e5c 50%, #223a6b 100%)',
+        'reroute-gradient':
+          'linear-gradient(135deg, #0e1a2b 0%, #1a2e5c 50%, #223a6b 100%)',
       },
       boxShadow: {
         card: '0 4px 32px 0 rgba(16, 30, 54, 0.25)',
@@ -37,4 +35,4 @@ module.exports = {
     },
   },
   plugins: [require('@tailwindcss/forms')],
-}; 
+};

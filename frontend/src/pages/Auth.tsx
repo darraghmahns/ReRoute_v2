@@ -6,8 +6,20 @@ import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
-import { loginSchema, registerSchema, type LoginFormData, type RegisterFormData } from '../lib/validations';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card';
+import {
+  loginSchema,
+  registerSchema,
+  type LoginFormData,
+  type RegisterFormData,
+} from '../lib/validations';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 const Auth: React.FC = () => {
@@ -120,12 +132,13 @@ const Auth: React.FC = () => {
 
         <Card className="bg-reroute-card border-reroute-card">
           <CardHeader>
-            <CardTitle className="text-white">{isLogin ? 'Sign In' : 'Sign Up'}</CardTitle>
+            <CardTitle className="text-white">
+              {isLogin ? 'Sign In' : 'Sign Up'}
+            </CardTitle>
             <CardDescription className="text-gray-400">
-              {isLogin 
+              {isLogin
                 ? 'Enter your credentials to access your account'
-                : 'Create a new account to get started'
-              }
+                : 'Create a new account to get started'}
             </CardDescription>
           </CardHeader>
 
@@ -145,9 +158,14 @@ const Auth: React.FC = () => {
             )}
 
             {isLogin ? (
-              <form onSubmit={loginForm.handleSubmit(onSubmitLogin)} className="space-y-4">
+              <form
+                onSubmit={loginForm.handleSubmit(onSubmitLogin)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">Email</Label>
+                  <Label htmlFor="email" className="text-white">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -165,7 +183,9 @@ const Auth: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white">Password</Label>
+                  <Label htmlFor="password" className="text-white">
+                    Password
+                  </Label>
                   <Input
                     id="password"
                     type="password"
@@ -193,14 +213,19 @@ const Auth: React.FC = () => {
                       Signing in...
                     </>
                   ) : (
-                    "Sign In"
+                    'Sign In'
                   )}
                 </Button>
               </form>
             ) : (
-              <form onSubmit={registerForm.handleSubmit(onSubmitRegister)} className="space-y-4">
+              <form
+                onSubmit={registerForm.handleSubmit(onSubmitRegister)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
-                  <Label htmlFor="register-email" className="text-white">Email</Label>
+                  <Label htmlFor="register-email" className="text-white">
+                    Email
+                  </Label>
                   <Input
                     id="register-email"
                     type="email"
@@ -218,7 +243,9 @@ const Auth: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="full_name" className="text-white">Full Name (Optional)</Label>
+                  <Label htmlFor="full_name" className="text-white">
+                    Full Name (Optional)
+                  </Label>
                   <Input
                     id="full_name"
                     type="text"
@@ -230,13 +257,17 @@ const Auth: React.FC = () => {
                   {registerForm.formState.errors.full_name && (
                     <p className="text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
-                      <span>{registerForm.formState.errors.full_name.message}</span>
+                      <span>
+                        {registerForm.formState.errors.full_name.message}
+                      </span>
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="register-password" className="text-white">Password</Label>
+                  <Label htmlFor="register-password" className="text-white">
+                    Password
+                  </Label>
                   <Input
                     id="register-password"
                     type="password"
@@ -248,13 +279,17 @@ const Auth: React.FC = () => {
                   {registerForm.formState.errors.password && (
                     <p className="text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
-                      <span>{registerForm.formState.errors.password.message}</span>
+                      <span>
+                        {registerForm.formState.errors.password.message}
+                      </span>
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-white">Confirm Password</Label>
+                  <Label htmlFor="confirm-password" className="text-white">
+                    Confirm Password
+                  </Label>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -266,7 +301,9 @@ const Auth: React.FC = () => {
                   {registerForm.formState.errors.confirmPassword && (
                     <p className="text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
-                      <span>{registerForm.formState.errors.confirmPassword.message}</span>
+                      <span>
+                        {registerForm.formState.errors.confirmPassword.message}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -282,7 +319,7 @@ const Auth: React.FC = () => {
                       Creating account...
                     </>
                   ) : (
-                    "Sign Up"
+                    'Sign Up'
                   )}
                 </Button>
               </form>
@@ -297,7 +334,9 @@ const Auth: React.FC = () => {
               className="w-full text-reroute-primary hover:text-reroute-primary/80 hover:bg-reroute-card"
               disabled={isSubmitting}
             >
-              {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+              {isLogin
+                ? 'Need an account? Sign up'
+                : 'Already have an account? Sign in'}
             </Button>
           </CardFooter>
         </Card>
@@ -306,4 +345,4 @@ const Auth: React.FC = () => {
   );
 };
 
-export default Auth; 
+export default Auth;

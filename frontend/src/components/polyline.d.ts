@@ -4,4 +4,4 @@ declare module '@mapbox/polyline' {
     encode: (coords: [number, number][]) => string;
   };
   export = polyline;
-} 
+}

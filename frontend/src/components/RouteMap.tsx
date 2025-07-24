@@ -98,7 +98,10 @@ const RouteMap: React.FC<RouteMapProps> = ({
 
       if (selectedLocation) {
         // Add a pin marker (draggable)
-        markerRef.current = new mapboxgl.Marker({ color: '#3B82F6', draggable: true })
+        markerRef.current = new mapboxgl.Marker({
+          color: '#3B82F6',
+          draggable: true,
+        })
           .setLngLat([selectedLocation.lng, selectedLocation.lat])
           .addTo(map.current);
 
@@ -165,7 +168,10 @@ const RouteMap: React.FC<RouteMapProps> = ({
             (bounds, coord) => {
               return bounds.extend(coord as [number, number]);
             },
-            new mapboxgl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number])
+            new mapboxgl.LngLatBounds(
+              coordinates[0] as [number, number],
+              coordinates[0] as [number, number]
+            )
           );
 
           map.current.fitBounds(bounds, {

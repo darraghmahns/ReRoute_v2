@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleStravaCallback } from '../services/strava';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const StravaCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
+    'loading'
+  );
   const [message, setMessage] = useState('Connecting to Strava...');
 
   useEffect(() => {
@@ -32,16 +39,21 @@ const StravaCallback: React.FC = () => {
         // Handle the callback
         const result = await handleStravaCallback(code);
         setStatus('success');
-        setMessage(`Successfully connected to Strava! Welcome, ${result.athlete.firstname}!`);
-        
+        setMessage(
+          `Successfully connected to Strava! Welcome, ${result.athlete.firstname}!`
+        );
+
         // Redirect to dashboard after a short delay
         setTimeout(() => {
           navigate('/', { replace: true });
         }, 2000);
-
       } catch (error) {
         setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Failed to connect to Strava.');
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Failed to connect to Strava.'
+        );
       }
     };
 
@@ -51,7 +63,9 @@ const StravaCallback: React.FC = () => {
   const getStatusIcon = () => {
     switch (status) {
       case 'loading':
-        return <Loader2 className="w-8 h-8 animate-spin text-reroute-primary" />;
+        return (
+          <Loader2 className="w-8 h-8 animate-spin text-reroute-primary" />
+        );
       case 'success':
         return <CheckCircle className="w-8 h-8 text-green-500" />;
       case 'error':
@@ -74,9 +88,7 @@ const StravaCallback: React.FC = () => {
     <div className="min-h-full flex items-center justify-center bg-reroute-gradient">
       <Card className="max-w-md w-full mx-4">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            {getStatusIcon()}
-          </div>
+          <div className="flex justify-center mb-4">{getStatusIcon()}</div>
           <CardTitle className={getStatusColor()}>
             {status === 'loading' && 'Connecting to Strava...'}
             {status === 'success' && 'Strava Connected!'}
@@ -85,16 +97,13 @@ const StravaCallback: React.FC = () => {
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-gray-600 mb-6">{message}</p>
-          
+
           {status === 'error' && (
             <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/settings')}
-                className="w-full"
-              >
+              <Button onClick={() => navigate('/settings')} className="w-full">
                 Go to Settings
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => navigate('/')}
                 className="w-full"
@@ -103,7 +112,7 @@ const StravaCallback: React.FC = () => {
               </Button>
             </div>
           )}
-          
+
           {status === 'success' && (
             <div className="text-sm text-gray-500">
               Redirecting to dashboard...
@@ -115,4 +124,4 @@ const StravaCallback: React.FC = () => {
   );
 };
 
-export default StravaCallback; 
+export default StravaCallback;

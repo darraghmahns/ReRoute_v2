@@ -22,7 +22,9 @@ export const useStrava = (): UseStravaReturn => {
       const response = await getStravaActivities();
       setActivities(response.activities);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch activities');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch activities'
+      );
     } finally {
       setLoading(false);
     }
@@ -36,7 +38,9 @@ export const useStrava = (): UseStravaReturn => {
       // Refresh activities after sync
       await fetchActivities();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sync activities');
+      setError(
+        err instanceof Error ? err.message : 'Failed to sync activities'
+      );
     } finally {
       setLoading(false);
     }
@@ -58,4 +62,4 @@ export const useStrava = (): UseStravaReturn => {
     syncActivities,
     refreshActivities,
   };
-}; 
+};

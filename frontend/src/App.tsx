@@ -18,32 +18,40 @@ function App() {
       <div className="min-h-screen flex flex-col bg-reroute-gradient bg-cover">
         <Navigation />
         <main className="container mx-auto px-2 py-4 flex-1">
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-reroute-primary mx-auto mb-4"></div>
-                <p className="text-white">Loading...</p>
+          <React.Suspense
+            fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-reroute-primary mx-auto mb-4"></div>
+                  <p className="text-white">Loading...</p>
+                </div>
               </div>
-            </div>
-          }>
+            }
+          >
             <Routes>
               {/* Public routes */}
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/strava-callback" element={<StravaCallbackPage />} />
-              
+
               {/* Protected routes */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <MainPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <MainPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
               {/* Note: Settings and Subscription are now managed within the Profile page */}
-              
+
               {/* 404 route */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

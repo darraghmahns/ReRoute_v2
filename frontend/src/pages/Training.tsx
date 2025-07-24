@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, TrendingUp, Play, CheckCircle, Zap, ChevronLeft, ChevronRight, Heart, Dumbbell, Activity, Zap as ZapIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import {
+  Calendar,
+  Clock,
+  TrendingUp,
+  Play,
+  CheckCircle,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Dumbbell,
+  Activity,
+  Zap as ZapIcon,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { trainingService } from '../services/training';
 import type { TrainingPlan, Workout, TrainingWeek } from '../types';
@@ -70,7 +88,7 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, day, onClick }) => {
   };
 
   return (
-    <Card 
+    <Card
       className="bg-reroute-card border-reroute-card hover:shadow-card transition-all duration-200 cursor-pointer h-full"
       onClick={onClick}
     >
@@ -79,29 +97,33 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, day, onClick }) => {
         <div className="absolute top-3 right-3">
           {getWorkoutIcon(workout.workout_type)}
         </div>
-        
+
         {/* Day */}
         <div className="text-sm font-medium text-gray-400 mb-2 capitalize">
           {day}
         </div>
-        
+
         {/* Title */}
         <h3 className="font-semibold text-white text-lg mb-2">
           {workout.title}
         </h3>
-        
+
         {/* Duration */}
         <div className="text-sm text-gray-400 mb-2">
-          {workout.duration_minutes > 0 ? `${workout.duration_minutes} min` : '0 min'}
+          {workout.duration_minutes > 0
+            ? `${workout.duration_minutes} min`
+            : '0 min'}
         </div>
-        
+
         {/* Description */}
         <p className="text-sm text-gray-300 mb-3 line-clamp-2">
           {workout.description}
         </p>
-        
+
         {/* Workout Type Badge */}
-        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getWorkoutTypeColor(workout.workout_type)}`}>
+        <div
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getWorkoutTypeColor(workout.workout_type)}`}
+        >
           {getWorkoutTypeLabel(workout.workout_type)}
         </div>
       </CardContent>
@@ -110,7 +132,6 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({ workout, day, onClick }) => {
 };
 
 const Training: React.FC = () => {
-
   const [currentPlan, setCurrentPlan] = useState<TrainingPlan | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
@@ -120,7 +141,7 @@ const Training: React.FC = () => {
   const [generateForm, setGenerateForm] = useState({
     goal: 'General Fitness',
     weekly_hours: 8,
-    fitness_level: 'intermediate'
+    fitness_level: 'intermediate',
   });
 
   useEffect(() => {
@@ -131,9 +152,10 @@ const Training: React.FC = () => {
     try {
       setLoading(true);
       const userPlans = await trainingService.getPlans();
-      
+
       // Set the most recent active plan as current
-      const activePlan = userPlans.find(plan => plan.is_active) || userPlans[0];
+      const activePlan =
+        userPlans.find((plan) => plan.is_active) || userPlans[0];
       if (activePlan) {
         setCurrentPlan(activePlan);
       }
@@ -148,9 +170,9 @@ const Training: React.FC = () => {
     try {
       setGenerating(true);
       setShowGenerateModal(false); // Close modal immediately
-      
+
       const newPlan = await trainingService.generatePlan(generateForm);
-      
+
       setCurrentPlan(newPlan);
       setCurrentWeekIndex(0);
     } catch (error) {
@@ -164,9 +186,9 @@ const Training: React.FC = () => {
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     if (!currentPlan) return;
-    
+
     const totalWeeks = currentPlan.plan_data.weeks.length;
-    
+
     if (direction === 'prev' && currentWeekIndex > 0) {
       setCurrentWeekIndex(currentWeekIndex - 1);
     } else if (direction === 'next' && currentWeekIndex < totalWeeks - 1) {
@@ -184,7 +206,7 @@ const Training: React.FC = () => {
   const getTotalTrainingTime = (): number => {
     const week = getCurrentWeek();
     if (!week) return 0;
-    
+
     return Object.values(week.workouts).reduce((total, workout) => {
       return total + workout.duration_minutes;
     }, 0);
@@ -192,21 +214,21 @@ const Training: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'numeric', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
   const getWeekRange = (): string => {
     const week = getCurrentWeek();
     if (!week) return '';
-    
+
     const startDate = new Date(week.week_start_date);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
-    
+
     return `${formatDate(week.week_start_date)} - ${formatDate(endDate.toISOString().split('T')[0])}`;
   };
 
@@ -228,7 +250,9 @@ const Training: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">Training</h1>
-        <p className="text-gray-400 mt-2">AI-powered training plans to improve your cycling</p>
+        <p className="text-gray-400 mt-2">
+          AI-powered training plans to improve your cycling
+        </p>
       </div>
 
       {!currentPlan ? (
@@ -236,11 +260,14 @@ const Training: React.FC = () => {
         <div className="text-center py-12">
           <div className="max-w-md mx-auto">
             <Zap className="w-16 h-16 text-reroute-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-4">No Training Plan</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              No Training Plan
+            </h2>
             <p className="text-gray-400 mb-6">
-              Generate your first AI-powered training plan to get started with structured workouts.
+              Generate your first AI-powered training plan to get started with
+              structured workouts.
             </p>
-            <Button 
+            <Button
               onClick={() => setShowGenerateModal(true)}
               className="bg-reroute-primary hover:bg-reroute-primary/80 text-white"
             >
@@ -256,27 +283,39 @@ const Training: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-2">{currentPlan.name}</h2>
-                  <p className="text-gray-400">Training Goal: {currentPlan.goal}</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {currentPlan.name}
+                  </h2>
+                  <p className="text-gray-400">
+                    Training Goal: {currentPlan.goal}
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{Math.round(getTotalTrainingTime() / 60)}h</div>
-                    <div className="text-sm text-gray-400">Total Training Time</div>
+                    <div className="text-3xl font-bold text-white">
+                      {Math.round(getTotalTrainingTime() / 60)}h
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Total Training Time
+                    </div>
                   </div>
-                  
+
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-white">AI Generated</div>
+                    <div className="text-lg font-semibold text-white">
+                      AI Generated
+                    </div>
                     <div className="text-sm text-gray-400">Plan Type</div>
                   </div>
-                  
+
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-white">{formatDate(currentPlan.created_at)}</div>
+                    <div className="text-lg font-semibold text-white">
+                      {formatDate(currentPlan.created_at)}
+                    </div>
                     <div className="text-sm text-gray-400">Plan Date</div>
                   </div>
-                  
-                  <Button 
+
+                  <Button
                     onClick={() => setShowGenerateModal(true)}
                     variant="outline"
                     className="border-gray-600 text-gray-300 hover:bg-gray-700"
@@ -300,15 +339,19 @@ const Training: React.FC = () => {
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous Week
             </Button>
-            
+
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white">Week {currentWeekIndex + 1}</h3>
+              <h3 className="text-xl font-semibold text-white">
+                Week {currentWeekIndex + 1}
+              </h3>
               <p className="text-gray-400">{getWeekRange()}</p>
             </div>
-            
+
             <Button
               onClick={() => navigateWeek('next')}
-              disabled={currentWeekIndex >= (currentPlan.plan_data.weeks.length - 1)}
+              disabled={
+                currentWeekIndex >= currentPlan.plan_data.weeks.length - 1
+              }
               variant="outline"
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
@@ -350,44 +393,65 @@ const Training: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-white mb-2">Description</h4>
-                    <p className="text-gray-300">{selectedWorkout.description}</p>
+                    <h4 className="font-semibold text-white mb-2">
+                      Description
+                    </h4>
+                    <p className="text-gray-300">
+                      {selectedWorkout.description}
+                    </p>
                   </div>
-                  
+
                   {selectedWorkout.details && (
                     <div>
                       <h4 className="font-semibold text-white mb-2">Details</h4>
                       <p className="text-gray-300">{selectedWorkout.details}</p>
                     </div>
                   )}
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-semibold text-white mb-2">Duration</h4>
-                      <p className="text-gray-300">{selectedWorkout.duration_minutes} minutes</p>
+                      <h4 className="font-semibold text-white mb-2">
+                        Duration
+                      </h4>
+                      <p className="text-gray-300">
+                        {selectedWorkout.duration_minutes} minutes
+                      </p>
                     </div>
-                    
-                    {selectedWorkout.ftp_percentage_min && selectedWorkout.ftp_percentage_max && (
-                      <div>
-                        <h4 className="font-semibold text-white mb-2">FTP Range</h4>
-                        <p className="text-gray-300">{selectedWorkout.ftp_percentage_min}% - {selectedWorkout.ftp_percentage_max}%</p>
-                      </div>
-                    )}
+
+                    {selectedWorkout.ftp_percentage_min &&
+                      selectedWorkout.ftp_percentage_max && (
+                        <div>
+                          <h4 className="font-semibold text-white mb-2">
+                            FTP Range
+                          </h4>
+                          <p className="text-gray-300">
+                            {selectedWorkout.ftp_percentage_min}% -{' '}
+                            {selectedWorkout.ftp_percentage_max}%
+                          </p>
+                        </div>
+                      )}
                   </div>
-                  
+
                   <div className="flex items-center space-x-4">
                     <Button
                       onClick={() => {
                         // Mark workout as complete
                         if (currentPlan) {
-                          trainingService.markWorkoutComplete(currentPlan.id, selectedWorkout.id, !selectedWorkout.completed);
+                          trainingService.markWorkoutComplete(
+                            currentPlan.id,
+                            selectedWorkout.id,
+                            !selectedWorkout.completed
+                          );
                           // Update local state
-                          setSelectedWorkout({ ...selectedWorkout, completed: !selectedWorkout.completed });
+                          setSelectedWorkout({
+                            ...selectedWorkout,
+                            completed: !selectedWorkout.completed,
+                          });
                         }
                       }}
                       className={`${
-                        selectedWorkout.completed 
-                          ? 'bg-green-600 hover:bg-green-700' 
+                        selectedWorkout.completed
+                          ? 'bg-green-600 hover:bg-green-700'
                           : 'bg-reroute-primary hover:bg-reroute-primary/80'
                       } text-white`}
                     >
@@ -412,7 +476,9 @@ const Training: React.FC = () => {
           {/* Training Zones Legend */}
           <Card className="bg-reroute-card border-reroute-card">
             <CardHeader>
-              <CardTitle className="text-white">Training Zones & Activities</CardTitle>
+              <CardTitle className="text-white">
+                Training Zones & Activities
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -434,7 +500,9 @@ const Training: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-gray-300">Cross Training: Strength/Other</span>
+                  <span className="text-gray-300">
+                    Cross Training: Strength/Other
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -447,14 +515,23 @@ const Training: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="bg-reroute-card border-reroute-card w-full max-w-md mx-4">
             <CardHeader>
-              <CardTitle className="text-white">Generate Training Plan</CardTitle>
+              <CardTitle className="text-white">
+                Generate Training Plan
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Training Goal</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Training Goal
+                </label>
                 <select
                   value={generateForm.goal}
-                  onChange={(e) => setGenerateForm(prev => ({ ...prev, goal: e.target.value }))}
+                  onChange={(e) =>
+                    setGenerateForm((prev) => ({
+                      ...prev,
+                      goal: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-reroute-primary"
                 >
                   <option value="General Fitness">General Fitness</option>
@@ -464,24 +541,38 @@ const Training: React.FC = () => {
                   <option value="Strength Building">Strength Building</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Weekly Hours</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Weekly Hours
+                </label>
                 <input
                   type="number"
                   min="1"
                   max="20"
                   value={generateForm.weekly_hours}
-                  onChange={(e) => setGenerateForm(prev => ({ ...prev, weekly_hours: parseInt(e.target.value) }))}
+                  onChange={(e) =>
+                    setGenerateForm((prev) => ({
+                      ...prev,
+                      weekly_hours: parseInt(e.target.value),
+                    }))
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-reroute-primary"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Fitness Level</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Fitness Level
+                </label>
                 <select
                   value={generateForm.fitness_level}
-                  onChange={(e) => setGenerateForm(prev => ({ ...prev, fitness_level: e.target.value }))}
+                  onChange={(e) =>
+                    setGenerateForm((prev) => ({
+                      ...prev,
+                      fitness_level: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-reroute-primary"
                 >
                   <option value="beginner">Beginner</option>
@@ -489,7 +580,7 @@ const Training: React.FC = () => {
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
-              
+
               <div className="flex space-x-3 pt-4">
                 <Button
                   onClick={() => setShowGenerateModal(false)}
@@ -516,9 +607,12 @@ const Training: React.FC = () => {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-reroute-card border border-reroute-card rounded-lg p-8 text-center max-w-md mx-4">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-reroute-primary mx-auto mb-6"></div>
-            <h3 className="text-xl font-bold text-white mb-4">Generating Your Training Plan</h3>
+            <h3 className="text-xl font-bold text-white mb-4">
+              Generating Your Training Plan
+            </h3>
             <p className="text-gray-300 mb-4">
-              Our AI is analyzing your Strava data and creating a personalized training plan just for you.
+              Our AI is analyzing your Strava data and creating a personalized
+              training plan just for you.
             </p>
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
               <div className="animate-pulse">●</div>
@@ -531,4 +625,4 @@ const Training: React.FC = () => {
   );
 };
 
-export default Training; 
+export default Training;

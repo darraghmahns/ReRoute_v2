@@ -1,7 +1,8 @@
 import axios from 'axios';
 import type { Profile, StravaActivity } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -21,7 +22,9 @@ export const getProfile = async (): Promise<Profile> => {
   }
 };
 
-export const updateProfile = async (profileData: Partial<Profile>): Promise<Profile> => {
+export const updateProfile = async (
+  profileData: Partial<Profile>
+): Promise<Profile> => {
   try {
     const response = await axios.put(`${API_URL}/profiles/me`, profileData, {
       headers: getAuthHeaders(),
@@ -57,11 +60,18 @@ export const getCachedActivities = async (): Promise<StravaActivity[]> => {
   }
 };
 
-export const syncStravaActivities = async (): Promise<{ message: string; activities_count: number }> => {
+export const syncStravaActivities = async (): Promise<{
+  message: string;
+  activities_count: number;
+}> => {
   try {
-    const response = await axios.post(`${API_URL}/strava/sync`, {}, {
-      headers: getAuthHeaders(),
-    });
+    const response = await axios.post(
+      `${API_URL}/strava/sync`,
+      {},
+      {
+        headers: getAuthHeaders(),
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error syncing Strava activities:', error);
@@ -83,14 +93,25 @@ export const calculateStats = (activities: StravaActivity[]) => {
     };
   }
 
-  const totalDistance = activities.reduce((sum, activity) => sum + activity.distance_m, 0);
-  const totalTime = activities.reduce((sum, activity) => sum + activity.moving_time_s, 0);
-  const totalElevation = activities.reduce((sum, activity) => sum + activity.total_elevation_gain_m, 0);
+  const totalDistance = activities.reduce(
+    (sum, activity) => sum + activity.distance_m,
+    0
+  );
+  const totalTime = activities.reduce(
+    (sum, activity) => sum + activity.moving_time_s,
+    0
+  );
+  const totalElevation = activities.reduce(
+    (sum, activity) => sum + activity.total_elevation_gain_m,
+    0
+  );
   const totalActivities = activities.length;
-  
-  const averageSpeed = totalDistance / totalTime * 20.237; // Convert m/s to mph
-  const maxDistance = Math.max(...activities.map(a => a.distance_m));
-  const maxElevation = Math.max(...activities.map(a => a.total_elevation_gain_m));
+
+  const averageSpeed = (totalDistance / totalTime) * 20.237; // Convert m/s to mph
+  const maxDistance = Math.max(...activities.map((a) => a.distance_m));
+  const maxElevation = Math.max(
+    ...activities.map((a) => a.total_elevation_gain_m)
+  );
 
   return {
     totalDistance: totalDistance * 0.000621371, // Convert to miles
@@ -104,9 +125,15 @@ export const calculateStats = (activities: StravaActivity[]) => {
 };
 
 // Helper function to get recent activities
-export const getRecentActivities = (activities: StravaActivity[], limit: number = 5) => {
+export const getRecentActivities = (
+  activities: StravaActivity[],
+  limit: number = 5
+) => {
   return activities
-    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    )
     .slice(0, limit);
 };
 
@@ -135,4 +162,4 @@ export const formatElevation = (feet: number): string => {
     return `${(feet / 1000).toFixed(1)}k ft`;
   }
   return `${Math.round(feet)} ft`;
-}; 
+};

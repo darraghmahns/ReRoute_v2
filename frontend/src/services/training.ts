@@ -1,7 +1,8 @@
 import { getToken } from './auth';
 import type { TrainingPlan, GeneratePlanRequest, TrainingWeek } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
 
 export const trainingService = {
   async generatePlan(request: GeneratePlanRequest): Promise<TrainingPlan> {
@@ -53,13 +54,19 @@ export const trainingService = {
     return response.json();
   },
 
-  async getWeekPlan(planId: string, weekStartDate: string): Promise<TrainingWeek> {
+  async getWeekPlan(
+    planId: string,
+    weekStartDate: string
+  ): Promise<TrainingWeek> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans/${planId}/week/${weekStartDate}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `${API_URL}/training/plans/${planId}/week/${weekStartDate}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to fetch week plan');
@@ -68,14 +75,21 @@ export const trainingService = {
     return response.json();
   },
 
-  async markWorkoutComplete(planId: string, workoutId: string, completed: boolean = true): Promise<void> {
+  async markWorkoutComplete(
+    planId: string,
+    workoutId: string,
+    completed: boolean = true
+  ): Promise<void> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans/${planId}/workout/${workoutId}/complete?completed=${completed}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `${API_URL}/training/plans/${planId}/workout/${workoutId}/complete?completed=${completed}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to update workout completion status');

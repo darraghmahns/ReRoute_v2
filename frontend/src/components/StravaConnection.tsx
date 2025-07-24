@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
-import { getStravaAuthUrl, disconnectStrava, syncStravaActivities, refreshStravaActivities } from '../services/strava';
+import {
+  getStravaAuthUrl,
+  disconnectStrava,
+  syncStravaActivities,
+  refreshStravaActivities,
+} from '../services/strava';
 import { Button } from './ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { Activity, Unlink, RefreshCw, CheckCircle, AlertCircle, Database } from 'lucide-react';
+import {
+  Activity,
+  Unlink,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Database,
+} from 'lucide-react';
 
 interface StravaConnectionProps {
   isConnected: boolean;
@@ -13,27 +25,29 @@ interface StravaConnectionProps {
 const StravaConnection: React.FC<StravaConnectionProps> = ({
   isConnected,
   athleteName,
-  onConnectionChange
+  onConnectionChange,
 }) => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [messageType, setMessageType] = useState<'success' | 'error'>(
+    'success'
+  );
 
   const handleConnect = async () => {
     try {
       setLoading(true);
       setMessage(null);
-      
+
       const { auth_url } = await getStravaAuthUrl();
-      
+
       // Open Strava authorization in a new window
       const width = 500;
       const height = 600;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
-      
+
       const authWindow = window.open(
         auth_url,
         'strava-auth',
@@ -55,10 +69,13 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
           window.location.reload();
         }
       }, 1000);
-
     } catch (error) {
       setMessageType('error');
-      setMessage(error instanceof Error ? error.message : 'Failed to get Strava authorization URL.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to get Strava authorization URL.'
+      );
     } finally {
       setLoading(false);
     }
@@ -68,19 +85,22 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
     try {
       setLoading(true);
       setMessage(null);
-      
+
       await disconnectStrava();
       onConnectionChange(false);
-      
+
       setMessageType('success');
       setMessage('Successfully disconnected from Strava.');
-      
+
       // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000);
-      
     } catch (error) {
       setMessageType('error');
-      setMessage(error instanceof Error ? error.message : 'Failed to disconnect from Strava.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to disconnect from Strava.'
+      );
     } finally {
       setLoading(false);
     }
@@ -90,18 +110,23 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
     try {
       setSyncing(true);
       setMessage(null);
-      
+
       const result = await syncStravaActivities();
-      
+
       setMessageType('success');
-      setMessage(`Successfully synced ${result.activities_count} activities from Strava!`);
-      
+      setMessage(
+        `Successfully synced ${result.activities_count} activities from Strava!`
+      );
+
       // Clear message after 5 seconds
       setTimeout(() => setMessage(null), 5000);
-      
     } catch (error) {
       setMessageType('error');
-      setMessage(error instanceof Error ? error.message : 'Failed to sync activities from Strava.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to sync activities from Strava.'
+      );
     } finally {
       setSyncing(false);
     }
@@ -111,18 +136,23 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
     try {
       setRefreshing(true);
       setMessage(null);
-      
+
       const result = await refreshStravaActivities();
-      
+
       setMessageType('success');
-      setMessage(`Full refresh complete! Cleared ${result.deleted_count} old activities, added ${result.added_count} fresh activities.`);
-      
+      setMessage(
+        `Full refresh complete! Cleared ${result.deleted_count} old activities, added ${result.added_count} fresh activities.`
+      );
+
       // Clear message after 8 seconds (longer for full refresh)
       setTimeout(() => setMessage(null), 8000);
-      
     } catch (error) {
       setMessageType('error');
-      setMessage(error instanceof Error ? error.message : 'Failed to refresh activities from Strava.');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to refresh activities from Strava.'
+      );
     } finally {
       setRefreshing(false);
     }
@@ -144,17 +174,25 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
               {isConnected ? 'Connected to Strava' : 'Not connected to Strava'}
             </p>
             {isConnected && athleteName && (
-              <p className="text-sm text-gray-500">Connected as: {athleteName}</p>
+              <p className="text-sm text-gray-500">
+                Connected as: {athleteName}
+              </p>
             )}
           </div>
-          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <div
+            className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}
+          />
         </div>
 
         {/* Message */}
         {message && (
-          <div className={`flex items-center gap-2 p-3 rounded-md ${
-            messageType === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
+          <div
+            className={`flex items-center gap-2 p-3 rounded-md ${
+              messageType === 'success'
+                ? 'bg-green-50 text-green-800'
+                : 'bg-red-50 text-red-800'
+            }`}
+          >
             {messageType === 'success' ? (
               <CheckCircle className="w-4 h-4" />
             ) : (
@@ -232,12 +270,25 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
         <div className="text-xs text-gray-500 space-y-1">
           {isConnected ? (
             <>
-              <p>Connected to Strava. Your activities will be synced automatically.</p>
-              <p><strong>Sync Activities:</strong> Updates existing activities and adds new ones.</p>
-              <p><strong>Full Refresh:</strong> Clears all data and re-syncs everything. Use when AI analyzes old data or activities seem stale.</p>
+              <p>
+                Connected to Strava. Your activities will be synced
+                automatically.
+              </p>
+              <p>
+                <strong>Sync Activities:</strong> Updates existing activities
+                and adds new ones.
+              </p>
+              <p>
+                <strong>Full Refresh:</strong> Clears all data and re-syncs
+                everything. Use when AI analyzes old data or activities seem
+                stale.
+              </p>
             </>
           ) : (
-            <p>Connect your Strava account to sync your cycling activities and get personalized insights.</p>
+            <p>
+              Connect your Strava account to sync your cycling activities and
+              get personalized insights.
+            </p>
           )}
         </div>
       </CardContent>
@@ -245,4 +296,4 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
   );
 };
 
-export default StravaConnection; 
+export default StravaConnection;

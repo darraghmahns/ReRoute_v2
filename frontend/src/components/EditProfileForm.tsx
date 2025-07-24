@@ -12,7 +12,11 @@ interface EditProfileFormProps {
   onCancel: () => void;
 }
 
-const EditProfileForm: React.FC<EditProfileFormProps> = ({ user, onSave, onCancel }) => {
+const EditProfileForm: React.FC<EditProfileFormProps> = ({
+  user,
+  onSave,
+  onCancel,
+}) => {
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
@@ -36,7 +40,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ user, onSave, onCance
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -60,13 +64,17 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ user, onSave, onCance
             <Camera className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-        <p className="text-sm text-gray-400">Profile photo upload coming soon</p>
+        <p className="text-sm text-gray-400">
+          Profile photo upload coming soon
+        </p>
       </div>
 
       {/* Name Fields */}
       <div className="space-y-4">
         <div>
-          <Label htmlFor="full_name" className="text-white">Full Name</Label>
+          <Label htmlFor="full_name" className="text-white">
+            Full Name
+          </Label>
           <Input
             id="full_name"
             type="text"
@@ -77,7 +85,9 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ user, onSave, onCance
           />
         </div>
         <div>
-          <Label htmlFor="email" className="text-white">Email Address</Label>
+          <Label htmlFor="email" className="text-white">
+            Email Address
+          </Label>
           <Input
             id="email"
             type="email"
@@ -112,4 +122,4 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ user, onSave, onCance
   );
 };
 
-export default EditProfileForm; 
+export default EditProfileForm;

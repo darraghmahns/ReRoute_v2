@@ -12,7 +12,10 @@ interface MapboxActivityMapProps {
   height?: number;
 }
 
-const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({ summary_polyline, height = 180 }) => {
+const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({
+  summary_polyline,
+  height = 180,
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
@@ -20,10 +23,15 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({ summary_polyline,
     if (!summary_polyline || !mapContainer.current) return;
 
     // Decode polyline to [lat, lng] pairs
-    const coordinates: [number, number][] = polyline.decode(summary_polyline).map(([lat, lng]: [number, number]) => [lng, lat]);
+    const coordinates: [number, number][] = polyline
+      .decode(summary_polyline)
+      .map(([lat, lng]: [number, number]) => [lng, lat]);
 
     // Center the map on the route
-    const bounds = coordinates.reduce((b: mapboxgl.LngLatBounds, coord: [number, number]) => b.extend(coord), new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+    const bounds = coordinates.reduce(
+      (b: mapboxgl.LngLatBounds, coord: [number, number]) => b.extend(coord),
+      new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+    );
 
     // Initialize map
     mapRef.current = new mapboxgl.Map({
@@ -72,10 +80,16 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({ summary_polyline,
   return (
     <div
       ref={mapContainer}
-      style={{ width: '100%', height: `${height}px`, borderRadius: '0.5rem', overflow: 'hidden', marginTop: 8 }}
+      style={{
+        width: '100%',
+        height: `${height}px`,
+        borderRadius: '0.5rem',
+        overflow: 'hidden',
+        marginTop: 8,
+      }}
       className="shadow-card"
     />
   );
 };
 
-export default MapboxActivityMap; 
+export default MapboxActivityMap;

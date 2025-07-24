@@ -19,11 +19,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
         >
           ×
         </button>
-        {title && <h2 className="text-xl font-bold mb-4 text-white">{title}</h2>}
+        {title && (
+          <h2 className="text-xl font-bold mb-4 text-white">{title}</h2>
+        )}
         {children}
       </div>
     </div>
   );
 };
 
-export default Modal; 
+export default Modal;

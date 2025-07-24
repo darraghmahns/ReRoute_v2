@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getCurrentUserWithProfile } from '../services/auth';
 import StravaConnection from '../components/StravaConnection';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { User, Shield, Bell, Palette, Database } from 'lucide-react';
 import type { Profile } from '../types';
@@ -46,7 +51,9 @@ const Settings: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white">Settings</h1>
-          <p className="text-gray-400 mt-2">Manage your account and preferences</p>
+          <p className="text-gray-400 mt-2">
+            Manage your account and preferences
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -54,7 +61,9 @@ const Settings: React.FC = () => {
           <div className="lg:col-span-2">
             <StravaConnection
               isConnected={stravaConnected}
-              athleteName={profile?.strava_user_id ? 'Connected Athlete' : undefined}
+              athleteName={
+                profile?.strava_user_id ? 'Connected Athlete' : undefined
+              }
               onConnectionChange={setStravaConnected}
             />
           </div>
@@ -78,7 +87,9 @@ const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-white mb-1">
                   Full Name
                 </label>
-                <p className="text-sm text-gray-300">{user?.full_name || 'Not set'}</p>
+                <p className="text-sm text-gray-300">
+                  {user?.full_name || 'Not set'}
+                </p>
               </div>
               <Button variant="outline" size="sm">
                 Edit Profile
@@ -97,8 +108,12 @@ const Settings: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Two-Factor Authentication</p>
-                  <p className="text-xs text-gray-400">Add an extra layer of security</p>
+                  <p className="text-sm font-medium">
+                    Two-Factor Authentication
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Add an extra layer of security
+                  </p>
                 </div>
                 <Button variant="outline" size="sm">
                   Enable
@@ -128,7 +143,9 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Email Notifications</p>
-                  <p className="text-xs text-gray-400">Receive updates via email</p>
+                  <p className="text-xs text-gray-400">
+                    Receive updates via email
+                  </p>
                 </div>
                 <Button variant="outline" size="sm">
                   Configure
@@ -137,7 +154,9 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Push Notifications</p>
-                  <p className="text-xs text-gray-400">Get alerts on your device</p>
+                  <p className="text-xs text-gray-400">
+                    Get alerts on your device
+                  </p>
                 </div>
                 <Button variant="outline" size="sm">
                   Configure
@@ -158,7 +177,9 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Theme</p>
-                  <p className="text-xs text-gray-400">Choose your preferred theme</p>
+                  <p className="text-xs text-gray-400">
+                    Choose your preferred theme
+                  </p>
                 </div>
                 <Button variant="outline" size="sm">
                   Dark
@@ -197,9 +218,15 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Delete Account</p>
-                  <p className="text-xs text-gray-400">Permanently delete your account</p>
+                  <p className="text-xs text-gray-400">
+                    Permanently delete your account
+                  </p>
                 </div>
-                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                >
                   Delete
                 </Button>
               </div>
@@ -211,4 +238,4 @@ const Settings: React.FC = () => {
   );
 };
 
-export default Settings; 
+export default Settings;

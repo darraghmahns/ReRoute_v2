@@ -95,7 +95,13 @@ export interface Workout {
   title: string;
   description: string;
   duration_minutes: number;
-  workout_type: 'recovery' | 'endurance' | 'threshold' | 'vo2max' | 'cross_training' | 'rest';
+  workout_type:
+    | 'recovery'
+    | 'endurance'
+    | 'threshold'
+    | 'vo2max'
+    | 'cross_training'
+    | 'rest';
   ftp_percentage_min?: number;
   ftp_percentage_max?: number;
   details?: string;
@@ -310,14 +316,14 @@ export const SUBSCRIPTION_TIERS = {
     routesPerMonth: 3,
     trainingPlans: 1,
     performanceAnalytics: false,
-    price: 0
+    price: 0,
   },
   premium: {
     chatMessages: 100,
     routesPerMonth: 25,
     trainingPlans: 5,
     performanceAnalytics: true,
-    price: 9.99
+    price: 9.99,
   },
   pro: {
     chatMessages: -1, // unlimited
@@ -325,8 +331,8 @@ export const SUBSCRIPTION_TIERS = {
     trainingPlans: -1,
     performanceAnalytics: true,
     advancedMetrics: true,
-    price: 19.99
-  }
+    price: 19.99,
+  },
 } as const;
 
-export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS; 
+export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;

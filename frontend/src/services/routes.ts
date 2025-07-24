@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { getToken } from './auth';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
 
 export interface RouteGenerationParams {
   start_lat: number;
@@ -99,25 +100,25 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const generateRoute = async (params: RouteGenerationParams): Promise<RouteGenerationResponse> => {
+export const generateRoute = async (
+  params: RouteGenerationParams
+): Promise<RouteGenerationResponse> => {
   try {
-    const response = await axios.post(
-      `${API_URL}/routes/generate`,
-      params,
-      {
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await axios.post(`${API_URL}/routes/generate`, params, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new Error('Unauthorized. Please log in again.');
       } else if (error.response?.status === 400) {
-        throw new Error(error.response.data?.detail || 'Invalid route parameters.');
+        throw new Error(
+          error.response.data?.detail || 'Invalid route parameters.'
+        );
       } else if (error.response?.status === 500) {
         throw new Error('Route generation failed. Please try again.');
       }
@@ -134,32 +135,32 @@ export const generateLoopRoute = async (
   route_type: 'road' | 'gravel' | 'mountain' | 'urban' = 'road'
 ): Promise<RouteGenerationResponse> => {
   try {
-    const response = await axios.post(
-      `${API_URL}/routes/loops`,
-      null,
-      {
-        params: {
-          lat,
-          lng,
-          distance_km,
-          profile,
-          route_type,
-        },
-        headers: getAuthHeaders(),
-      }
-    );
+    const response = await axios.post(`${API_URL}/routes/loops`, null, {
+      params: {
+        lat,
+        lng,
+        distance_km,
+        profile,
+        route_type,
+      },
+      headers: getAuthHeaders(),
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new Error('Unauthorized. Please log in again.');
       } else if (error.response?.status === 400) {
-        throw new Error(error.response.data?.detail || 'Invalid parameters for loop route.');
+        throw new Error(
+          error.response.data?.detail || 'Invalid parameters for loop route.'
+        );
       } else if (error.response?.status === 500) {
         throw new Error('Loop route generation failed. Please try again.');
       }
     }
-    throw new Error('An unexpected error occurred during loop route generation.');
+    throw new Error(
+      'An unexpected error occurred during loop route generation.'
+    );
   }
 };
 
@@ -193,12 +194,16 @@ export const generateAILoopRoute = async (
       if (error.response?.status === 401) {
         throw new Error('Unauthorized. Please log in again.');
       } else if (error.response?.status === 400) {
-        throw new Error(error.response.data?.detail || 'Invalid parameters for AI loop route.');
+        throw new Error(
+          error.response.data?.detail || 'Invalid parameters for AI loop route.'
+        );
       } else if (error.response?.status === 500) {
         throw new Error('AI loop route generation failed. Please try again.');
       }
     }
-    throw new Error('An unexpected error occurred during AI loop route generation.');
+    throw new Error(
+      'An unexpected error occurred during AI loop route generation.'
+    );
   }
 };
 
@@ -293,7 +298,7 @@ export const downloadGPX = async (routeId: string): Promise<void> => {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });
-    
+
     // Create download link
     const blob = new Blob([response.data], { type: 'application/gpx+xml' });
     const url = window.URL.createObjectURL(blob);
@@ -316,11 +321,16 @@ export const downloadGPX = async (routeId: string): Promise<void> => {
   }
 };
 
-export const getRouteSuggestions = async (routeId: string): Promise<unknown> => {
+export const getRouteSuggestions = async (
+  routeId: string
+): Promise<unknown> => {
   try {
-    const response = await axios.get(`${API_URL}/routes/${routeId}/suggestions`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await axios.get(
+      `${API_URL}/routes/${routeId}/suggestions`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
