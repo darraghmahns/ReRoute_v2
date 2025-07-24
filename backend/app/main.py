@@ -1,8 +1,9 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import os
+from fastapi.staticfiles import StaticFiles
 
 import app.models.route as route_models  # ensure Route models are registered
 import app.models.strava as strava_models  # ensure StravaActivity is registered

@@ -5,6 +5,7 @@ Revises:
 Create Date: 2025-07-10 17:19:40.205479
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
