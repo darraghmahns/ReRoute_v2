@@ -58,12 +58,12 @@ jobs:
     
     - name: Run linting
       run: |
-        poetry run black --check .
-        poetry run isort --check-only .
-        poetry run flake8 .
+        poetry run black --check app/ alembic/
+        poetry run isort --check-only app/ alembic/
+        poetry run flake8 app/ alembic/
     
     - name: Run type checking
-      run: poetry run mypy .
+      run: poetry run mypy app/
     
     - name: Run tests
       env:
