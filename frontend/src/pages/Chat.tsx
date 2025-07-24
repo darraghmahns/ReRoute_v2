@@ -50,7 +50,7 @@ const Chat: React.FC = () => {
         {/* Chat Header */}
         <div className="p-6 border-b border-white/20">
           <h2 className="text-2xl font-bold text-white mb-2">AI Training Assistant</h2>
-          <p className="text-gray-300">Ask me about your training, routes, performance, or anything cycling related!</p>
+          <p className="text-gray-300">Ask me about your training, performance, or anything cycling related!</p>
         </div>
 
         {/* Messages Container */}
