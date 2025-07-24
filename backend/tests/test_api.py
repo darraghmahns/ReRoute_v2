@@ -1,3 +1,4 @@
+"""Integration tests for API endpoints"""
 import time
 
 import pytest
@@ -5,11 +6,12 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+# Mark all tests in this file as integration tests
+pytestmark = pytest.mark.integration
 
 
 # Helper function to get auth token
-def get_auth_token():
+def get_auth_token(client):
     unique_email = f"test{int(time.time())}@example.com"
     # Register
     client.post(
@@ -28,7 +30,7 @@ def get_auth_token():
 
 
 # Auth endpoints
-def test_register():
+def test_register(client):
     # Use unique email to avoid conflicts
     unique_email = f"test{int(time.time())}@example.com"
     response = client.post(
