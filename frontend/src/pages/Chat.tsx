@@ -46,11 +46,23 @@ const Chat: React.FC = () => {
 
   return (
     <div className="flex justify-center items-center w-full py-4">
-      <div className="max-w-2xl lg:max-w-3xl w-full mx-4 bg-white/10 backdrop-blur-sm rounded-xl shadow-xl flex flex-col" style={{ height: 'calc(100vh - 220px)', maxHeight: '650px', minHeight: '450px' }}>
+      <div
+        className="max-w-2xl lg:max-w-3xl w-full mx-4 bg-white/10 backdrop-blur-sm rounded-xl shadow-xl flex flex-col"
+        style={{
+          height: 'calc(100vh - 220px)',
+          maxHeight: '650px',
+          minHeight: '450px',
+        }}
+      >
         {/* Chat Header */}
         <div className="p-6 border-b border-white/20">
-          <h2 className="text-2xl font-bold text-white mb-2">AI Training Assistant</h2>
-          <p className="text-gray-300">Ask me about your training, performance, or anything cycling related!</p>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            AI Training Assistant
+          </h2>
+          <p className="text-gray-300">
+            Ask me about your training, routes, performance, or anything cycling
+            related!
+          </p>
         </div>
 
         {/* Messages Container */}
@@ -61,8 +73,13 @@ const Chat: React.FC = () => {
           {messages.length === 0 && (
             <div className="text-center text-gray-400 py-12">
               <div className="mb-4">💬</div>
-              <div className="text-lg mb-2">No messages yet. Start the conversation!</div>
-              <div className="text-sm">Try asking about your training plan, recent rides, or cycling advice.</div>
+              <div className="text-lg mb-2">
+                No messages yet. Start the conversation!
+              </div>
+              <div className="text-sm">
+                Try asking about your training plan, recent rides, or cycling
+                advice.
+              </div>
             </div>
           )}
           {messages.map((msg, i) => (
@@ -72,8 +89,8 @@ const Chat: React.FC = () => {
             >
               <div
                 className={`px-6 py-3 rounded-2xl max-w-[85%] shadow-lg ${
-                  msg.role === 'user' 
-                    ? 'bg-reroute-primary text-white ml-12' 
+                  msg.role === 'user'
+                    ? 'bg-reroute-primary text-white ml-12'
                     : 'bg-white/15 backdrop-blur-sm text-white mr-12'
                 }`}
               >
@@ -81,12 +98,28 @@ const Chat: React.FC = () => {
                   <div className="prose prose-invert prose-sm max-w-none">
                     <ReactMarkdown
                       components={{
-                        p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
-                        ul: ({ children }) => <ul className="mb-3 pl-4 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="mb-3 pl-4 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li className="text-gray-200">{children}</li>,
-                        strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                        em: ({ children }) => <em className="text-blue-200">{children}</em>,
+                        p: ({ children }) => (
+                          <p className="mb-3 last:mb-0 leading-relaxed">
+                            {children}
+                          </p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="mb-3 pl-4 space-y-1">{children}</ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="mb-3 pl-4 space-y-1">{children}</ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="text-gray-200">{children}</li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="text-white font-semibold">
+                            {children}
+                          </strong>
+                        ),
+                        em: ({ children }) => (
+                          <em className="text-blue-200">{children}</em>
+                        ),
                         code: ({ children }) => (
                           <code className="bg-black/30 px-1.5 py-0.5 rounded text-sm font-mono text-blue-200">
                             {children}
@@ -97,9 +130,21 @@ const Chat: React.FC = () => {
                             {children}
                           </pre>
                         ),
-                        h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-lg font-bold mb-2 text-white">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-base font-bold mb-2 text-white">{children}</h3>,
+                        h1: ({ children }) => (
+                          <h1 className="text-xl font-bold mb-3 text-white">
+                            {children}
+                          </h1>
+                        ),
+                        h2: ({ children }) => (
+                          <h2 className="text-lg font-bold mb-2 text-white">
+                            {children}
+                          </h2>
+                        ),
+                        h3: ({ children }) => (
+                          <h3 className="text-base font-bold mb-2 text-white">
+                            {children}
+                          </h3>
+                        ),
                       }}
                     >
                       {msg.content}
@@ -117,10 +162,18 @@ const Chat: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
                   </div>
-                  <span className="text-sm text-gray-300">AI is thinking...</span>
+                  <span className="text-sm text-gray-300">
+                    AI is thinking...
+                  </span>
                 </div>
               </div>
             </div>
@@ -129,7 +182,7 @@ const Chat: React.FC = () => {
         </div>
 
         {/* Input Form */}
-        <form 
+        <form
           onSubmit={(e) => {
             e.preventDefault();
             if (!input.trim()) return;
@@ -153,12 +206,18 @@ const Chat: React.FC = () => {
                   setMessages((prev) => [...prev, data.message]);
                 }
               } catch {
-                setMessages((prev) => [...prev, { role: 'assistant', content: 'Error sending message. Please try again.' }]);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: 'assistant',
+                    content: 'Error sending message. Please try again.',
+                  },
+                ]);
               } finally {
                 setSending(false);
               }
             })();
-          }} 
+          }}
           className="p-6 border-t border-white/20 bg-white/5"
         >
           <div className="flex gap-3">
@@ -183,8 +242,18 @@ const Chat: React.FC = () => {
               ) : (
                 <>
                   <span>Send</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
                   </svg>
                 </>
               )}
@@ -201,4 +270,4 @@ export default Chat;
 /* Tailwind custom class for hiding scrollbars */
 // In your global CSS (e.g., App.css):
 // .scrollbar-hide::-webkit-scrollbar { display: none; }
-// .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; } 
+// .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
