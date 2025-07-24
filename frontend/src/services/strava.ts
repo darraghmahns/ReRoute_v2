@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { StravaActivity, StravaZone } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+const API_URL = import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
 
 // Get auth token for API requests
 const getAuthHeaders = () => {
