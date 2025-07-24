@@ -88,41 +88,17 @@ resource "google_redis_instance" "cache" {
   region         = var.region
 }
 
-# Secrets
-resource "google_secret_manager_secret" "openai_api_key" {
+# Use existing secrets (data sources instead of resources)
+data "google_secret_manager_secret" "openai_api_key" {
   secret_id = "OPENAI_API_KEY"
-  
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
 }
 
-resource "google_secret_manager_secret" "strava_client_secret" {
+data "google_secret_manager_secret" "strava_client_secret" {
   secret_id = "STRAVA_CLIENT_SECRET"
-  
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
 }
 
-resource "google_secret_manager_secret" "secret_key" {
+data "google_secret_manager_secret" "secret_key" {
   secret_id = "SECRET_KEY"
-  
-  replication {
-    user_managed {
-      replicas {
-        location = var.region
-      }
-    }
-  }
 }
 
 # Service Account for Cloud Run
@@ -200,7 +176,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
         name = "OPENAI_API_KEY"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.openai_api_key.secret_id
+            secret  = data.google_secret_manager_secret.openai_api_key.secret_id
             version = "latest"
           }
         }
@@ -210,7 +186,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
         name = "STRAVA_CLIENT_SECRET"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.strava_client_secret.secret_id
+            secret  = data.google_secret_manager_secret.strava_client_secret.secret_id
             version = "latest"
           }
         }
@@ -220,7 +196,7 @@ resource "google_cloud_run_v2_service" "reroute_app" {
         name = "SECRET_KEY"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.secret_key.secret_id
+            secret  = data.google_secret_manager_secret.secret_key.secret_id
             version = "latest"
           }
         }

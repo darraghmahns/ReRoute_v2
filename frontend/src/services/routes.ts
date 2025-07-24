@@ -208,7 +208,7 @@ export const getUserRoutes = async (
   route_type?: string
 ): Promise<RouteListItem[]> => {
   try {
-    const params: any = { skip, limit };
+    const params: Record<string, string | number> = { skip, limit };
     if (route_type && route_type !== 'all') {
       params.route_type = route_type;
     }
@@ -316,7 +316,7 @@ export const downloadGPX = async (routeId: string): Promise<void> => {
   }
 };
 
-export const getRouteSuggestions = async (routeId: string): Promise<any> => {
+export const getRouteSuggestions = async (routeId: string): Promise<unknown> => {
   try {
     const response = await axios.get(`${API_URL}/routes/${routeId}/suggestions`, {
       headers: getAuthHeaders(),
