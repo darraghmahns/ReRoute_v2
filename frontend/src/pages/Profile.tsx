@@ -328,7 +328,7 @@ const Profile: React.FC = () => {
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-gray-400">
-                            No recent activities found
+                            No recent activities found...
                           </p>
                           <p className="text-sm text-gray-500 mt-2">
                             Connect your Strava account to see your activities
