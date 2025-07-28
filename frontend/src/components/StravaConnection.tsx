@@ -42,33 +42,8 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
 
       const { auth_url } = await getStravaAuthUrl();
 
-      // Open Strava authorization in a new window
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-
-      const authWindow = window.open(
-        auth_url,
-        'strava-auth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-
-      // Check if the window was opened successfully
-      if (!authWindow) {
-        setMessageType('error');
-        setMessage('Please allow popups to connect to Strava.');
-        return;
-      }
-
-      // Poll for window closure and check for callback
-      const checkClosed = setInterval(() => {
-        if (authWindow.closed) {
-          clearInterval(checkClosed);
-          // Refresh the page or update state to reflect connection
-          window.location.reload();
-        }
-      }, 1000);
+      // Navigate to Strava authorization in the same window
+      window.location.href = auth_url;
     } catch (error) {
       setMessageType('error');
       setMessage(
@@ -76,7 +51,6 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
           ? error.message
           : 'Failed to get Strava authorization URL.'
       );
-    } finally {
       setLoading(false);
     }
   };

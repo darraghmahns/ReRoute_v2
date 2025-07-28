@@ -43,9 +43,9 @@ const StravaCallback: React.FC = () => {
           `Successfully connected to Strava! Welcome, ${result.athlete.firstname}!`
         );
 
-        // Redirect to dashboard after a short delay
+        // Redirect to profile page after a short delay
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate('/profile', { replace: true });
         }, 2000);
       } catch (error) {
         setStatus('error');
