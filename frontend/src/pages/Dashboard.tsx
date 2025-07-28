@@ -10,6 +10,7 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Card,
@@ -399,9 +400,21 @@ const Dashboard: React.FC = () => {
                             <Activity className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <p className="text-white font-medium">
-                              {activity.title}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-white font-medium">
+                                {activity.title}
+                              </p>
+                              <a
+                                href={`https://www.strava.com/activities/${activity.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-gray-400 hover:text-reroute-primary transition-colors"
+                                title="View on Strava"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </a>
+                            </div>
                             <p className="text-sm text-gray-400">
                               {activity.distance} • {activity.duration}
                               {activity.elevation
