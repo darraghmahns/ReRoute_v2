@@ -75,6 +75,6 @@ jobs:
           --max-instances 10 \
           --port 8000 \
           --timeout 300 \
-          --set-env-vars STRAVA_CLIENT_ID=162622 \
+          --set-env-vars STRAVA_CLIENT_ID=162622,POSTGRES_DB=reroute_db,POSTGRES_USER=reroute_user,POSTGRES_PASSWORD=salmontinker789,POSTGRES_HOST=/cloudsql/reroute-training:us-central1:reroute-db,POSTGRES_PORT=5432 \
           --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,SECRET_KEY=SECRET_KEY:latest,STRAVA_CLIENT_SECRET=STRAVA_CLIENT_SECRET:latest \
           --add-cloudsql-instances reroute-training:us-central1:reroute-db
