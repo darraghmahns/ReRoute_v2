@@ -177,33 +177,31 @@ async def handle_callback(
                 f"Successfully got athlete data: {athlete_data.get('id', 'unknown_id')}"
             )
 
-            # TODO: For debugging, just return the athlete data without saving
-            # # Update user's profile with Strava info
-            # profile = db.query(Profile).filter(Profile.id == current_user.id).first()
-            # if not profile:
-            #     profile = Profile(id=current_user.id)
-            #     db.add(profile)
+            # Update user's profile with Strava info
+            profile = db.query(Profile).filter(Profile.id == current_user.id).first()
+            if not profile:
+                profile = Profile(id=current_user.id)
+                db.add(profile)
 
-            # profile.strava_user_id = str(athlete_data.get("id"))
-            # profile.strava_access_token = token_info.get("access_token")
-            # profile.strava_refresh_token = token_info.get("refresh_token")
-            # # Strava tokens DO expire - store the expiry time
-            # if token_info.get("expires_at"):
-            #     profile.strava_token_expires_at = datetime.fromtimestamp(
-            #         token_info["expires_at"]
-            #     )
+            profile.strava_user_id = str(athlete_data.get("id"))
+            profile.strava_access_token = token_info.get("access_token")
+            profile.strava_refresh_token = token_info.get("refresh_token")
+            # Strava tokens DO expire - store the expiry time
+            if token_info.get("expires_at"):
+                profile.strava_token_expires_at = datetime.fromtimestamp(
+                    token_info["expires_at"]
+                )
 
-            # db.commit()
+            db.commit()
 
             return {
-                "message": "Strava connected successfully (DEBUG MODE - not saved)",
+                "message": "Strava connected successfully",
                 "athlete": {
                     "id": athlete_data.get("id"),
                     "firstname": athlete_data.get("firstname"),
                     "lastname": athlete_data.get("lastname"),
                     "username": athlete_data.get("username"),
                 },
-                "debug": "Authentication bypassed for testing",
             }
         else:
             logging.error(f"Failed to get athlete info: {athlete_response.text}")
