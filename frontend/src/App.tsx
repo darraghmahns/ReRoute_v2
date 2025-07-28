@@ -16,11 +16,11 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
 const RootHandler: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const hasStravaCallback = urlParams.get('code') && urlParams.get('scope');
-  
+
   if (hasStravaCallback) {
     return <StravaCallbackPage />;
   }
-  
+
   return (
     <ProtectedRoute>
       <MainPage />
