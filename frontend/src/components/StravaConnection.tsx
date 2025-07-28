@@ -215,7 +215,7 @@ const StravaConnection: React.FC<StravaConnectionProps> = ({
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <img
-                  src="/src/assets/1.1 Connect with Strava Buttons/Connect with Strava Orange/btn_strava_connect_with_orange.svg"
+                  src="/strava/btn_strava_connect_with_orange.svg"
                   alt="Connect with Strava"
                   style={{ height: '40px', width: 'auto', display: 'block' }}
                 />

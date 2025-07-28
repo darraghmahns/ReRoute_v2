@@ -9,7 +9,7 @@ const Footer: React.FC = () => (
       className="mb-2"
     >
       <img
-        src="/src/assets/1.2-Strava-API-Logos/Powered by Strava/pwrdBy_strava_white/api_logo_pwrdBy_strava_horiz_white.svg"
+        src="/strava/api_logo_pwrdBy_strava_horiz_white.svg"
         alt="Powered by Strava"
         style={{ height: '12px', display: 'inline-block' }}
       />

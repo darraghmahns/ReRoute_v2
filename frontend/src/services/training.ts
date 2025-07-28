@@ -2,7 +2,7 @@ import { getToken } from './auth';
 import type { TrainingPlan, GeneratePlanRequest, TrainingWeek } from '../types';
 
 const API_URL =
-  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+  import.meta.env.VITE_API_URL || '';
 
 export const trainingService = {
   async generatePlan(request: GeneratePlanRequest): Promise<TrainingPlan> {

@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { StravaActivity, StravaZone } from '../types';
 
 const API_URL =
-  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+  import.meta.env.VITE_API_URL || '';
 
 // Get auth token for API requests
 const getAuthHeaders = () => {
@@ -57,7 +57,13 @@ export const handleStravaCallback = async (
   const res = await axios.post(
     `${API_URL}/strava/callback`,
     { code },
-    { headers: getAuthHeaders() }
+    { 
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      withCredentials: true 
+    }
   );
   return res.data;
 };

@@ -1,0 +1,1 @@
+import{j as e}from"./index-DuguQ6Dc.js";const o=()=>e.jsxs("div",{className:"text-center mt-20",children:[e.jsx("h1",{className:"text-4xl font-bold mb-4 text-reroute-red",children:"404 - Not Found"}),e.jsx("p",{className:"text-gray-400",children:"The page you are looking for does not exist."})]});export{o as default};

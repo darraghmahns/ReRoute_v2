@@ -26,10 +26,18 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-config.set_main_option(
-    "sqlalchemy.url",
-    "postgresql+psycopg2://reroute_user:reroute_pass@localhost:5432/reroute_db",
-)
+# Get database URL from environment - same as in app/core/database.py
+from app.core.config import settings
+
+# Handle Cloud SQL unix socket connections
+if settings.POSTGRES_HOST.startswith("/cloudsql/"):
+    # Cloud SQL unix socket connection
+    database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@/{settings.POSTGRES_DB}?host={settings.POSTGRES_HOST}"
+else:
+    # Standard TCP connection
+    database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+
+config.set_main_option("sqlalchemy.url", database_url)
 
 
 def run_migrations_offline() -> None:

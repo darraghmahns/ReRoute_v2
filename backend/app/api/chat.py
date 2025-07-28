@@ -838,6 +838,54 @@ Based on the activity data above, please answer the user's question: {last_user_
         raise HTTPException(status_code=500, detail=f"OpenAI chat failed: {str(e)}")
 
 
+@router.get("/debug")
+async def debug_openai():
+    """Debug endpoint for testing OpenAI integration."""
+    try:
+        from app.core.config import settings
+        from app.services.openai_chat import openai_chat_service
+
+        # Test basic configuration
+        api_key_preview = (
+            settings.OPENAI_API_KEY[:20] + "..."
+            if settings.OPENAI_API_KEY
+            else "NOT SET"
+        )
+
+        # Test OpenAI API call
+        response = openai_chat_service.chat_completion(
+            [
+                {
+                    "role": "user",
+                    "content": "Respond with just 'OK' if you can read this.",
+                }
+            ],
+            max_tokens=10,
+        )
+
+        return {
+            "status": "success",
+            "api_key_preview": api_key_preview,
+            "openai_response": response,
+            "message": "OpenAI integration working correctly",
+        }
+    except Exception as e:
+        import traceback
+
+        return {
+            "status": "error",
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": traceback.format_exc(),
+            "api_key_preview": getattr(settings, "OPENAI_API_KEY", "NOT_ACCESSIBLE")[
+                :20
+            ]
+            + "..."
+            if hasattr(locals(), "settings") and settings.OPENAI_API_KEY
+            else "NOT SET",
+        }
+
+
 @router.get("/history", response_model=ChatHistoryResponse)
 def get_history(
     current_user: User = Depends(get_current_active_user_by_session),

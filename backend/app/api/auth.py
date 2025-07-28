@@ -51,6 +51,13 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    # Create corresponding profile
+    from app.models.user import Profile
+
+    new_profile = Profile(id=new_user.id, profile_completed=False)
+    db.add(new_profile)
+    db.commit()
+
     return new_user
 
 

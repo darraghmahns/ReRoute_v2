@@ -40,6 +40,7 @@ app.include_router(chat.router)
 app.include_router(analytics.router)
 app.include_router(subscription.router)
 
+
 # Try to create database tables, fall back gracefully if database is not available
 try:
     Base.metadata.create_all(bind=engine)
@@ -65,12 +66,38 @@ if os.path.exists(static_dir):
             return FileResponse(asset_path)
         return {"error": "Asset not found"}
 
+    # Specific route for strava assets
+    @app.get("/strava/{file_path:path}")
+    async def serve_strava_assets(file_path: str):
+        asset_path = os.path.join(static_dir, "strava", file_path)
+        if os.path.exists(asset_path):
+            return FileResponse(asset_path)
+        return {"error": "Strava asset not found"}
+
     # Catch-all route for React Router (must be last)
+    # This should NOT match API routes - FastAPI will handle those automatically
     @app.get("/{full_path:path}")
     async def serve_frontend_routes(full_path: str):
-        # If it's an API route, let FastAPI handle it normally
-        if full_path.startswith("api/"):
-            return {"message": "API endpoint not found"}
+        # Special handling for /strava-callback - let React handle it
+        if full_path == "strava-callback":
+            return FileResponse(os.path.join(static_dir, "index.html"))
+
+        # Skip API routes entirely - let FastAPI handle them
+        api_prefixes = [
+            "auth",
+            "chat",
+            "training",
+            "strava",
+            "profiles",
+            "analytics",
+            "subscription",
+            "routes",
+            "api",
+        ]
+        if any(full_path.split("/")[0] == prefix for prefix in api_prefixes):
+            # This should never be reached for valid API routes
+            return {"error": "API route not found", "path": full_path}
+
         # If it's a static asset that wasn't caught above, try to serve it
         if "." in full_path:
             asset_path = os.path.join(static_dir, full_path)

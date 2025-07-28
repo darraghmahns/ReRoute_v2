@@ -6,19 +6,17 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
-# Create database URL - use SQLite for development if PostgreSQL is not available
-if os.getenv("USE_SQLITE", "false").lower() == "true":
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./reroute.db"
+# Create database URL for PostgreSQL
+# For Cloud SQL unix socket connections, format is different
+if settings.POSTGRES_HOST.startswith("/cloudsql/"):
+    # Cloud SQL unix socket connection
+    SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@/{settings.POSTGRES_DB}?host={settings.POSTGRES_HOST}"
 else:
+    # Standard TCP connection
     SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 
 # Create engine
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args=(
-        {"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
-    ),
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

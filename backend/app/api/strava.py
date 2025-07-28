@@ -74,10 +74,11 @@ def get_valid_strava_token(profile: Profile, db: Session) -> Optional[str]:
 @router.get("/auth-url")
 def get_auth_url():
     """Get Strava OAuth URL"""
+    redirect_uri = "https://reroute.training/strava-callback"
     logging.info(
-        f"Strava config - Client ID: {settings.STRAVA_CLIENT_ID}, Redirect URI: {settings.STRAVA_REDIRECT_URI}"
+        f"Strava config - Client ID: {settings.STRAVA_CLIENT_ID}, Redirect URI: {redirect_uri}"
     )
-    auth_url = f"https://www.strava.com/oauth/authorize?client_id={settings.STRAVA_CLIENT_ID}&response_type=code&redirect_uri={settings.STRAVA_REDIRECT_URI}&approval_prompt=force&scope=read,activity:read_all,profile:read_all"
+    auth_url = f"https://www.strava.com/oauth/authorize?client_id={settings.STRAVA_CLIENT_ID}&response_type=code&redirect_uri={redirect_uri}&approval_prompt=force&scope=read,activity:read_all,profile:read_all"
     return {"auth_url": auth_url}
 
 
@@ -89,8 +90,19 @@ async def handle_callback(
 ):
     """Handle OAuth callback"""
     try:
+        logging.info("=== STRAVA CALLBACK START ===")
+        logging.info(f"Request headers: {dict(request.headers)}")
+        # For debugging - temporarily bypass authentication
+        auth_header = request.headers.get("Authorization", "")
+        logging.info(
+            f"Auth header present: {bool(auth_header)}, starts with Bearer: {auth_header.startswith('Bearer ')}"
+        )
+
         # Get the authorization code from the request
         body = await request.json()
+        logging.info(
+            f"Request body keys: {list(body.keys()) if body else 'Empty body'}"
+        )
         code = body.get("code")
 
         if not code:
@@ -99,20 +111,20 @@ async def handle_callback(
 
         logging.info(f"Received authorization code (first 10 chars): {code[:10]}...")
 
-        # Check if user already has a valid Strava connection
-        profile = db.query(Profile).filter(Profile.id == current_user.id).first()
-        if profile and profile.strava_access_token:
-            # Check if token is still valid
-            access_token = get_valid_strava_token(profile, db)
-            if access_token:
-                logging.info("User already has valid Strava connection")
-                return {
-                    "message": "Strava already connected successfully",
-                    "athlete": {
-                        "id": profile.strava_user_id,
-                        "note": "Already connected",
-                    },
-                }
+        # TODO: For now, just test token exchange without user association
+        # profile = db.query(Profile).filter(Profile.id == current_user.id).first()
+        # if profile and profile.strava_access_token:
+        #     # Check if token is still valid
+        #     access_token = get_valid_strava_token(profile, db)
+        #     if access_token:
+        #         logging.info("User already has valid Strava connection")
+        #         return {
+        #             "message": "Strava already connected successfully",
+        #             "athlete": {
+        #                 "id": profile.strava_user_id,
+        #                 "note": "Already connected",
+        #             },
+        #         }
 
         # Exchange code for access token
         token_url = "https://www.strava.com/oauth/token"
@@ -161,39 +173,49 @@ async def handle_callback(
 
         if athlete_response.status_code == 200:
             athlete_data = athlete_response.json()
+            logging.info(
+                f"Successfully got athlete data: {athlete_data.get('id', 'unknown_id')}"
+            )
 
-            # Update user's profile with Strava info
-            profile = db.query(Profile).filter(Profile.id == current_user.id).first()
-            if not profile:
-                profile = Profile(id=current_user.id)
-                db.add(profile)
+            # TODO: For debugging, just return the athlete data without saving
+            # # Update user's profile with Strava info
+            # profile = db.query(Profile).filter(Profile.id == current_user.id).first()
+            # if not profile:
+            #     profile = Profile(id=current_user.id)
+            #     db.add(profile)
 
-            profile.strava_user_id = str(athlete_data.get("id"))
-            profile.strava_access_token = token_info.get("access_token")
-            profile.strava_refresh_token = token_info.get("refresh_token")
-            # Strava tokens DO expire - store the expiry time
-            if token_info.get("expires_at"):
-                profile.strava_token_expires_at = datetime.fromtimestamp(
-                    token_info["expires_at"]
-                )
+            # profile.strava_user_id = str(athlete_data.get("id"))
+            # profile.strava_access_token = token_info.get("access_token")
+            # profile.strava_refresh_token = token_info.get("refresh_token")
+            # # Strava tokens DO expire - store the expiry time
+            # if token_info.get("expires_at"):
+            #     profile.strava_token_expires_at = datetime.fromtimestamp(
+            #         token_info["expires_at"]
+            #     )
 
-            db.commit()
+            # db.commit()
 
             return {
-                "message": "Strava connected successfully",
+                "message": "Strava connected successfully (DEBUG MODE - not saved)",
                 "athlete": {
                     "id": athlete_data.get("id"),
                     "firstname": athlete_data.get("firstname"),
                     "lastname": athlete_data.get("lastname"),
                     "username": athlete_data.get("username"),
                 },
+                "debug": "Authentication bypassed for testing",
             }
         else:
             logging.error(f"Failed to get athlete info: {athlete_response.text}")
             raise HTTPException(status_code=400, detail="Failed to get athlete info")
 
+    except HTTPException as http_exc:
+        logging.error(f"HTTP Exception in Strava callback: {http_exc.detail}")
+        raise http_exc
     except Exception as e:
         logging.exception("Error connecting to Strava:")
+        logging.error(f"Exception type: {type(e).__name__}")
+        logging.error(f"Exception details: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Error connecting to Strava: {str(e)}"
         )

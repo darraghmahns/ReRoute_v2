@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken } from './auth';
 
 const API_URL =
-  import.meta.env.VITE_API_URL || 'https://reroute-app-33fih5yanq-uc.a.run.app';
+  import.meta.env.VITE_API_URL || '';
 
 export interface RouteGenerationParams {
   start_lat: number;

@@ -9,8 +9,6 @@ class Settings(BaseSettings):
     STRAVA_CLIENT_ID: str = "changeme"
     STRAVA_CLIENT_SECRET: str = "changeme"
     STRAVA_WEBHOOK_SECRET: str = "changeme"
-    # IMPORTANT: This must match your frontend port (default: 3000)
-    STRAVA_REDIRECT_URI: str = "changeme"
 
     # Stripe Configuration
     STRIPE_API_KEY: str = "changeme"
@@ -34,7 +32,8 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "reroute_db"
     POSTGRES_USER: str = "reroute_user"
     POSTGRES_PASSWORD: str = "reroute_pass"
-    POSTGRES_HOST: str = "localhost"
+    # For Cloud Run, use Cloud SQL connection name; for local dev, use localhost
+    POSTGRES_HOST: str = "/cloudsql/reroute-training:us-central1:reroute-db"
     POSTGRES_PORT: int = 5432
 
     # Redis Configuration

@@ -71,12 +71,25 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.drop_index(
-        op.f("secondary_unit_lookup_abbrev_idx"), table_name="secondary_unit_lookup"
-    )
-    op.drop_table("secondary_unit_lookup")
-    op.drop_index(op.f("county_lookup_name_idx"), table_name="county_lookup")
-    op.drop_index(op.f("county_lookup_state_idx"), table_name="county_lookup")
+    # Drop tables and indices if they exist (conditional drops for clean database)
+    try:
+        op.drop_index(
+            op.f("secondary_unit_lookup_abbrev_idx"), table_name="secondary_unit_lookup"
+        )
+    except:
+        pass
+    try:
+        op.drop_table("secondary_unit_lookup")
+    except:
+        pass
+    try:
+        op.drop_index(op.f("county_lookup_name_idx"), table_name="county_lookup")
+    except:
+        pass
+    try:
+        op.drop_index(op.f("county_lookup_state_idx"), table_name="county_lookup")
+    except:
+        pass
     op.drop_table("county_lookup")
     op.drop_table("layer")
     op.drop_table("zip_state")
