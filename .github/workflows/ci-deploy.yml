@@ -73,7 +73,7 @@ jobs:
           --memory 1Gi \
           --cpu 1 \
           --max-instances 10 \
-          --port 8080 \
+          --port 8000 \
           --timeout 300 \
           --set-env-vars STRAVA_CLIENT_ID=162622 \
           --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,SECRET_KEY=SECRET_KEY:latest,STRAVA_CLIENT_SECRET=STRAVA_CLIENT_SECRET:latest \
