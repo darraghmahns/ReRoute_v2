@@ -328,36 +328,63 @@ def sync_activities(
                     updated += 1
                     logging.info(f"Updating existing activity: {act_name} ({act_date})")
 
-                # Always try to fetch/update streams for better data quality
-                streams_url = (
-                    f"https://www.strava.com/api/v3/activities/{act_id}/streams"
-                )
-                stream_keys = "watts,heartrate,latlng,altitude,time,distance,cadence,temp,grade_smooth,velocity_smooth"
+                # Try to fetch/update streams for better data quality, but handle errors gracefully
+                try:
+                    streams_url = (
+                        f"https://www.strava.com/api/v3/activities/{act_id}/streams"
+                    )
+                    stream_keys = "watts,heartrate,latlng,altitude,time,distance,cadence,temp,grade_smooth,velocity_smooth"
 
-                # Use the refreshed token for streams
-                streams_resp = requests.get(
-                    streams_url,
-                    headers=headers,
-                    params={"keys": stream_keys, "key_by_type": "true"},
-                )
-                if streams_resp.status_code == 200:
-                    streams_data = streams_resp.json()
-                    db_act.streams = streams_data
-                    # Log what streams we got
-                    available_streams = (
-                        list(streams_data.keys()) if streams_data else []
+                    # Use the refreshed token for streams with timeout
+                    streams_resp = requests.get(
+                        streams_url,
+                        headers=headers,
+                        params={"keys": stream_keys, "key_by_type": "true"},
+                        timeout=10,  # Prevent hanging requests
                     )
-                    logging.info(
-                        f"Fetched streams for {act_name}: {', '.join(available_streams)}"
-                    )
-                elif streams_resp.status_code == 404:
-                    # No streams available for this activity
-                    logging.info(f"No streams available for activity: {act_name}")
-                    db_act.streams = {}
-                else:
+
+                    if streams_resp.status_code == 200:
+                        streams_data = streams_resp.json()
+                        db_act.streams = streams_data
+                        # Log what streams we got
+                        available_streams = (
+                            list(streams_data.keys()) if streams_data else []
+                        )
+                        logging.info(
+                            f"Fetched streams for {act_name}: {', '.join(available_streams)}"
+                        )
+                    elif streams_resp.status_code == 404:
+                        # No streams available for this activity
+                        logging.info(f"No streams available for activity: {act_name}")
+                        db_act.streams = {}
+                    elif streams_resp.status_code == 429:
+                        # Rate limit exceeded - skip streams but continue sync
+                        logging.warning(
+                            f"Rate limit exceeded for streams on {act_name} - sync will continue without detailed stream data"
+                        )
+                        db_act.streams = {}
+                    else:
+                        # Other errors - log but don't fail sync
+                        logging.warning(
+                            f"Failed to fetch streams for {act_name}: {streams_resp.status_code} - continuing sync"
+                        )
+                        db_act.streams = {}
+
+                except requests.exceptions.Timeout:
                     logging.warning(
-                        f"Failed to fetch streams for {act_name}: {streams_resp.status_code}"
+                        f"Timeout fetching streams for {act_name} - continuing sync"
                     )
+                    db_act.streams = {}
+                except requests.exceptions.RequestException as req_err:
+                    logging.warning(
+                        f"Network error fetching streams for {act_name}: {req_err} - continuing sync"
+                    )
+                    db_act.streams = {}
+                except Exception as stream_err:
+                    logging.warning(
+                        f"Error fetching streams for {act_name}: {stream_err} - continuing sync"
+                    )
+                    db_act.streams = {}
 
                 db_act.updated_at = datetime.utcnow()
                 upserted += 1
@@ -368,8 +395,23 @@ def sync_activities(
                 f"Sync complete: {new_activities} new, {updated} updated, {upserted} total"
             )
 
+            # Create a user-friendly success message
+            if upserted > 0:
+                message = f"Successfully synced {upserted} activities"
+                if new_activities > 0:
+                    message += f" ({new_activities} new"
+                    if updated > 0:
+                        message += f", {updated} updated)"
+                    else:
+                        message += ")"
+                elif updated > 0:
+                    message += f" ({updated} updated)"
+                message += "!"
+            else:
+                message = "Sync completed - no new activities to process."
+
             return {
-                "message": f"Synced {upserted} activities: {new_activities} new, {updated} updated (with streams)",
+                "message": message,
                 "activities_count": upserted,
                 "new_activities": new_activities,
                 "updated_activities": updated,
