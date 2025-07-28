@@ -75,35 +75,17 @@ if os.path.exists(static_dir):
         return {"error": "Strava asset not found"}
 
     # Catch-all route for React Router (must be last)
-    # This should NOT match API routes - FastAPI will handle those automatically
+    # This serves the React app for all non-API, non-static routes
     @app.get("/{full_path:path}")
     async def serve_frontend_routes(full_path: str):
-        # Special handling for /strava-callback - let React handle it
-        if full_path == "strava-callback":
-            return FileResponse(os.path.join(static_dir, "index.html"))
-
-        # Skip API routes entirely - let FastAPI handle them
-        api_prefixes = [
-            "auth",
-            "chat",
-            "training",
-            "strava",
-            "profiles",
-            "analytics",
-            "subscription",
-            "routes",
-            "api",
-        ]
-        if any(full_path.split("/")[0] == prefix for prefix in api_prefixes):
-            # This should never be reached for valid API routes
-            return {"error": "API route not found", "path": full_path}
-
-        # If it's a static asset that wasn't caught above, try to serve it
+        # If it's a static asset, try to serve it
         if "." in full_path:
             asset_path = os.path.join(static_dir, full_path)
             if os.path.exists(asset_path):
                 return FileResponse(asset_path)
-        # Otherwise serve the React app
+
+        # For all other routes (including /auth, /profile, /strava-callback, etc.)
+        # serve the React app and let React Router handle the routing
         return FileResponse(os.path.join(static_dir, "index.html"))
 
 else:
