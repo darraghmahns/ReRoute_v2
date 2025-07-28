@@ -12,6 +12,22 @@ const AuthPage = React.lazy(() => import('./pages/Auth'));
 const StravaCallbackPage = React.lazy(() => import('./pages/StravaCallback'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
 
+// Component to handle root route with potential Strava callback
+const RootHandler: React.FC = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasStravaCallback = urlParams.get('code') && urlParams.get('scope');
+  
+  if (hasStravaCallback) {
+    return <StravaCallbackPage />;
+  }
+  
+  return (
+    <ProtectedRoute>
+      <MainPage />
+    </ProtectedRoute>
+  );
+};
+
 function App() {
   return (
     <Router>
@@ -33,15 +49,8 @@ function App() {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/strava-callback" element={<StravaCallbackPage />} />
 
-              {/* Protected routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Root route with Strava callback detection */}
+              <Route path="/" element={<RootHandler />} />
               <Route
                 path="/profile"
                 element={

@@ -74,7 +74,7 @@ def get_valid_strava_token(profile: Profile, db: Session) -> Optional[str]:
 @router.get("/auth-url")
 def get_auth_url():
     """Get Strava OAuth URL"""
-    redirect_uri = "https://reroute.training/strava-callback"
+    redirect_uri = "https://reroute.training/"
     logging.info(
         f"Strava config - Client ID: {settings.STRAVA_CLIENT_ID}, Redirect URI: {redirect_uri}"
     )
