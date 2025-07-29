@@ -35,16 +35,13 @@ const Main: React.FC = () => {
   return (
     <div className="min-h-full">
       {/* Slider / Tab nav */}
-      <div className="flex justify-center w-full mb-4 sticky top-4 z-10">
-        <div
-          className="flex gap-2 px-2 py-2 rounded-xl bg-reroute-tabbar shadow-lg"
-          style={{ width: 'fit-content', minWidth: 0 }}
-        >
+      <div className="flex justify-center w-full mb-4 sticky top-4 z-10 px-2">
+        <div className="flex gap-1 sm:gap-2 px-1 sm:px-2 py-2 rounded-xl bg-reroute-tabbar shadow-lg overflow-x-auto max-w-full">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors text-base
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base whitespace-nowrap min-w-0 flex-shrink-0
                 ${
                   activeTab === tab.id
                     ? 'bg-reroute-tab-active text-white shadow'
@@ -53,16 +50,17 @@ const Main: React.FC = () => {
               `}
             >
               <tab.icon
-                className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-white/80'}`}
+                className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-white/80'}`}
               />
-              <span>{tab.label}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Content */}
-      <div>{renderContent()}</div>
+      <div className="px-2 sm:px-0">{renderContent()}</div>
     </div>
   );
 };

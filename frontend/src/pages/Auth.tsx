@@ -121,49 +121,49 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-full flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">Reroute</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Reroute</h2>
           <p className="mt-2 text-sm text-gray-400">
             {isLogin ? 'Sign in to your account' : 'Create your account'}
           </p>
         </div>
 
         <Card className="bg-reroute-card border-reroute-card">
-          <CardHeader>
-            <CardTitle className="text-white">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-white text-lg sm:text-xl">
               {isLogin ? 'Sign In' : 'Sign Up'}
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-gray-400 text-sm">
               {isLogin
                 ? 'Enter your credentials to access your account'
                 : 'Create a new account to get started'}
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="pt-0 px-4 sm:px-6">
             {error && (
-              <div className="mb-4 p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-sm text-red-400">{error}</p>
+              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-md flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-red-400 break-words">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-50/20 rounded-md flex items-start space-x-2">
+              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-green-50 border border-green-50/20 rounded-md flex items-start space-x-2">
                 <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-green-500">{success}</p>
+                <p className="text-xs sm:text-sm text-green-500 break-words">{success}</p>
               </div>
             )}
 
             {isLogin ? (
               <form
                 onSubmit={loginForm.handleSubmit(onSubmitLogin)}
-                className="space-y-4"
+                className="space-y-3 sm:space-y-4"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="email" className="text-white text-sm">
                     Email
                   </Label>
                   <Input
@@ -171,19 +171,19 @@ const Auth: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     {...loginForm.register('email')}
-                    className={`${loginForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${loginForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {loginForm.formState.errors.email && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>{loginForm.formState.errors.email.message}</span>
                     </p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="password" className="text-white text-sm">
                     Password
                   </Label>
                   <Input
@@ -191,11 +191,11 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Enter your password"
                     {...loginForm.register('password')}
-                    className={`${loginForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${loginForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {loginForm.formState.errors.password && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>{loginForm.formState.errors.password.message}</span>
                     </p>
@@ -204,7 +204,7 @@ const Auth: React.FC = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50"
+                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50 h-10 sm:h-auto text-sm sm:text-base mt-4 sm:mt-6"
                   disabled={isSubmitting || loading}
                 >
                   {isSubmitting ? (
@@ -220,10 +220,10 @@ const Auth: React.FC = () => {
             ) : (
               <form
                 onSubmit={registerForm.handleSubmit(onSubmitRegister)}
-                className="space-y-4"
+                className="space-y-3 sm:space-y-4"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="register-email" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="register-email" className="text-white text-sm">
                     Email
                   </Label>
                   <Input
@@ -231,19 +231,19 @@ const Auth: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     {...registerForm.register('email')}
-                    className={`${registerForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.email ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.email && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>{registerForm.formState.errors.email.message}</span>
                     </p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="full_name" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="full_name" className="text-white text-sm">
                     Full Name (Optional)
                   </Label>
                   <Input
@@ -251,11 +251,11 @@ const Auth: React.FC = () => {
                     type="text"
                     placeholder="Enter your full name"
                     {...registerForm.register('full_name')}
-                    className={`${registerForm.formState.errors.full_name ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.full_name ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.full_name && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>
                         {registerForm.formState.errors.full_name.message}
@@ -264,8 +264,8 @@ const Auth: React.FC = () => {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-password" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="register-password" className="text-white text-sm">
                     Password
                   </Label>
                   <Input
@@ -273,11 +273,11 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Enter your password"
                     {...registerForm.register('password')}
-                    className={`${registerForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.password ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.password && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>
                         {registerForm.formState.errors.password.message}
@@ -286,8 +286,8 @@ const Auth: React.FC = () => {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-white">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="confirm-password" className="text-white text-sm">
                     Confirm Password
                   </Label>
                   <Input
@@ -295,11 +295,11 @@ const Auth: React.FC = () => {
                     type="password"
                     placeholder="Confirm your password"
                     {...registerForm.register('confirmPassword')}
-                    className={`${registerForm.formState.errors.confirmPassword ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400`}
+                    className={`${registerForm.formState.errors.confirmPassword ? 'border-red-500 focus:border-red-500: border-gray-600 focus:border-reroute-primary' : 'border-gray-600 focus:border-reroute-primary'} bg-reroute-card text-white placeholder-gray-400 h-10 sm:h-auto text-sm sm:text-base`}
                     disabled={isSubmitting}
                   />
                   {registerForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-red-500 flex items-center space-x-1">
+                    <p className="text-xs sm:text-sm text-red-500 flex items-center space-x-1">
                       <AlertCircle className="w-3 h-3" />
                       <span>
                         {registerForm.formState.errors.confirmPassword.message}
@@ -310,7 +310,7 @@ const Auth: React.FC = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50"
+                  className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50 h-10 sm:h-auto text-sm sm:text-base mt-4 sm:mt-6"
                   disabled={isSubmitting || loading}
                 >
                   {isSubmitting ? (
@@ -326,12 +326,12 @@ const Auth: React.FC = () => {
             )}
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="pt-3 sm:pt-6 px-4 sm:px-6">
             <Button
               type="button"
               variant="ghost"
               onClick={toggleMode}
-              className="w-full text-reroute-primary hover:text-reroute-primary/80 hover:bg-reroute-card"
+              className="w-full text-reroute-primary hover:text-reroute-primary/80 hover:bg-reroute-card h-10 sm:h-auto text-sm sm:text-base"
               disabled={isSubmitting}
             >
               {isLogin

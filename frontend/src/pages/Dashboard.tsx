@@ -52,11 +52,11 @@ const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Card className="bg-reroute-card border-reroute-card">
-      <CardContent className="p-6">
+      <CardContent className="p-3 sm:p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm font-medium text-gray-400 truncate">{title}</p>
+            <p className="text-lg sm:text-2xl font-bold text-white truncate">{value}</p>
             {change && (
               <p
                 className={`text-xs mt-1 ${
@@ -71,7 +71,7 @@ const StatCard: React.FC<StatCardProps> = ({
               </p>
             )}
           </div>
-          <div className={`p-3 rounded-full ${color}`}>{icon}</div>
+          <div className={`p-2 sm:p-3 rounded-full ${color} flex-shrink-0 ml-2`}>{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -246,13 +246,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-              <p className="text-gray-400 mt-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
+              <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
                 Welcome back! Here's your cycling overview.
               </p>
             </div>
@@ -260,14 +260,15 @@ const Dashboard: React.FC = () => {
               <Button
                 onClick={syncActivities}
                 disabled={loading}
-                className="flex items-center gap-2 text-white"
+                className="flex items-center gap-2 text-white w-full sm:w-auto justify-center"
+                size="sm"
               >
                 {loading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <RefreshCw className="w-4 h-4" />
                 )}
-                Sync Activities
+                <span className="sm:inline">Sync Activities</span>
               </Button>
             )}
           </div>
@@ -306,60 +307,60 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-8">
           <StatCard
             title="This Week"
             value={stats.weeklyDistance}
             change={stats.distanceChange}
-            icon={<Activity className="w-6 h-6 text-white" />}
+            icon={<Activity className="w-4 h-4 sm:w-6 sm:h-6 text-white" />}
             color="bg-reroute-primary"
           />
           <StatCard
             title="Training Time"
             value={stats.weeklyTime}
             change={stats.timeChange}
-            icon={<Clock className="w-6 h-6 text-white" />}
+            icon={<Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white" />}
             color="bg-reroute-green"
           />
           <StatCard
             title="Calories Burned"
             value={stats.calories}
             change={stats.caloriesChange}
-            icon={<Zap className="w-6 h-6 text-white" />}
+            icon={<Zap className="w-4 h-4 sm:w-6 sm:h-6 text-white" />}
             color="bg-reroute-yellow"
           />
           <StatCard
             title="Activities"
             value={stats.routesCompleted}
             change={stats.activitiesChange}
-            icon={<Route className="w-6 h-6 text-white" />}
+            icon={<Route className="w-4 h-4 sm:w-6 sm:h-6 text-white" />}
             color="bg-reroute-purple"
           />
         </div>
 
         {/* Recent Activities */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
           <Card className="bg-reroute-card border-reroute-card">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
-                <span>Recent Activities</span>
-                <div className="flex items-center gap-2">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span className="text-lg sm:text-xl">Recent Activities</span>
+                <div className="flex items-center gap-1 sm:gap-2 justify-center sm:justify-end">
                   <Button
                     size="icon"
-                    className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition"
+                    className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition h-8 w-8 sm:h-10 sm:w-10"
                     onClick={() =>
                       setSelectedWeekStart(subWeeks(selectedWeekStart, 1))
                     }
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
-                  <span className="text-sm text-gray-300">
+                  <span className="text-xs sm:text-sm text-gray-300 px-2 text-center">
                     {format(weekStart, 'MMM d')} -{' '}
                     {format(weekEnd, 'MMM d, yyyy')}
                   </span>
                   <Button
                     size="icon"
-                    className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition"
+                    className="bg-reroute-primary/20 text-white hover:bg-reroute-primary/40 transition h-8 w-8 sm:h-10 sm:w-10"
                     onClick={() =>
                       setSelectedWeekStart(addWeeks(selectedWeekStart, 1))
                     }
@@ -367,21 +368,21 @@ const Dashboard: React.FC = () => {
                       addWeeks(selectedWeekStart, 1) > getMonday(new Date())
                     }
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="w-6 h-6 animate-spin text-reroute-primary" />
-                  <span className="ml-2 text-gray-400">
+                <div className="flex items-center justify-center py-6 sm:py-8">
+                  <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-reroute-primary" />
+                  <span className="ml-2 text-gray-400 text-sm sm:text-base">
                     Loading activities...
                   </span>
                 </div>
               ) : recentActivities.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2 sm:space-y-4">
                   {recentActivities.map((activity) => (
                     <div
                       key={activity.id}
@@ -394,54 +395,52 @@ const Dashboard: React.FC = () => {
                         )
                       }
                     >
-                      <div className="flex items-center justify-between p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-reroute-primary rounded-full flex items-center justify-center">
-                            <Activity className="w-5 h-5 text-white" />
+                      <div className="flex items-start sm:items-center gap-3 p-2 sm:p-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-reroute-primary rounded-full flex items-center justify-center flex-shrink-0">
+                          <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start sm:items-center gap-2 mb-1">
+                            <p className="text-white font-medium text-sm sm:text-base truncate flex-1">
+                              {activity.title}
+                            </p>
+                            <a
+                              href={`https://www.strava.com/activities/${activity.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-gray-400 hover:text-reroute-primary transition-colors flex-shrink-0"
+                              title="View on Strava"
+                            >
+                              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </a>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-white font-medium">
-                                {activity.title}
-                              </p>
-                              <a
-                                href={`https://www.strava.com/activities/${activity.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-gray-400 hover:text-reroute-primary transition-colors"
-                                title="View on Strava"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </div>
-                            <p className="text-sm text-gray-400">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+                            <p className="text-xs sm:text-sm text-gray-400 truncate">
                               {activity.distance} • {activity.duration}
-                              {activity.elevation
+                              {activity.elevation && window.innerWidth > 640
                                 ? ` • ${activity.elevation}`
                                 : ''}
-                              {activity.type ? ` • ${activity.type}` : ''}
-                              {activity.calories
+                              {activity.type && window.innerWidth > 640 ? ` • ${activity.type}` : ''}
+                              {activity.calories && window.innerWidth > 768
                                 ? ` • ${activity.calories}`
                                 : ''}
-                              {activity.average_heartrate
+                              {activity.average_heartrate && window.innerWidth > 768
                                 ? ` • ${activity.average_heartrate}`
                                 : ''}
                             </p>
+                            <p className="text-xs sm:text-sm text-gray-400 flex-shrink-0">
+                              {activity.date}
+                            </p>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-400">
-                            {activity.date}
-                          </p>
                         </div>
                       </div>
                       {expandedActivityId === activity.id &&
                         activity.map?.summary_polyline && (
-                          <div className="w-full px-3 pb-3">
+                          <div className="w-full px-2 sm:px-3 pb-2 sm:pb-3">
                             <MapboxActivityMap
                               summary_polyline={activity.map.summary_polyline}
-                              height={180}
+                              height={window.innerWidth < 640 ? 120 : 180}
                             />
                           </div>
                         )}
@@ -449,11 +448,11 @@ const Dashboard: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-400">No activities yet</p>
+                <div className="text-center py-6 sm:py-8">
+                  <Activity className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-gray-400 text-sm sm:text-base">No activities yet</p>
                   {!stravaConnected && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-2">
                       Connect to Strava to see your activities
                     </p>
                   )}
@@ -464,38 +463,38 @@ const Dashboard: React.FC = () => {
 
           {/* Quick Actions */}
           <Card className="bg-reroute-card border-reroute-card">
-            <CardHeader>
-              <CardTitle className="text-white">Quick Actions</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-white text-lg sm:text-xl">Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-3">
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 gap-2 sm:gap-3">
                 <Button
-                  className="w-full justify-start text-white"
+                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
                 >
-                  <Route className="w-4 h-4 mr-2" />
-                  Generate New Route
+                  <Route className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Generate New Route</span>
                 </Button>
                 <Button
-                  className="w-full justify-start text-white"
+                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
                 >
-                  <Target className="w-4 h-4 mr-2" />
-                  Create Training Plan
+                  <Target className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Create Training Plan</span>
                 </Button>
                 <Button
-                  className="w-full justify-start text-white"
+                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
                 >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
+                  <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">View Analytics</span>
                 </Button>
                 <Button
-                  className="w-full justify-start text-white"
+                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
                 >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Workout
+                  <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Schedule Workout</span>
                 </Button>
               </div>
             </CardContent>
