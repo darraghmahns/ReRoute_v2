@@ -55,8 +55,12 @@ const StatCard: React.FC<StatCardProps> = ({
       <CardContent className="p-3 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-sm font-medium text-gray-400 truncate">{title}</p>
-            <p className="text-lg sm:text-2xl font-bold text-white truncate">{value}</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-400 truncate">
+              {title}
+            </p>
+            <p className="text-lg sm:text-2xl font-bold text-white truncate">
+              {value}
+            </p>
             {change && (
               <p
                 className={`text-xs mt-1 ${
@@ -71,7 +75,11 @@ const StatCard: React.FC<StatCardProps> = ({
               </p>
             )}
           </div>
-          <div className={`p-2 sm:p-3 rounded-full ${color} flex-shrink-0 ml-2`}>{icon}</div>
+          <div
+            className={`p-2 sm:p-3 rounded-full ${color} flex-shrink-0 ml-2`}
+          >
+            {icon}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -251,7 +259,9 @@ const Dashboard: React.FC = () => {
         <div className="mb-4 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                Dashboard
+              </h1>
               <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
                 Welcome back! Here's your cycling overview.
               </p>
@@ -421,11 +431,14 @@ const Dashboard: React.FC = () => {
                               {activity.elevation && window.innerWidth > 640
                                 ? ` • ${activity.elevation}`
                                 : ''}
-                              {activity.type && window.innerWidth > 640 ? ` • ${activity.type}` : ''}
+                              {activity.type && window.innerWidth > 640
+                                ? ` • ${activity.type}`
+                                : ''}
                               {activity.calories && window.innerWidth > 768
                                 ? ` • ${activity.calories}`
                                 : ''}
-                              {activity.average_heartrate && window.innerWidth > 768
+                              {activity.average_heartrate &&
+                              window.innerWidth > 768
                                 ? ` • ${activity.average_heartrate}`
                                 : ''}
                             </p>
@@ -450,7 +463,9 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="text-center py-6 sm:py-8">
                   <Activity className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                  <p className="text-gray-400 text-sm sm:text-base">No activities yet</p>
+                  <p className="text-gray-400 text-sm sm:text-base">
+                    No activities yet
+                  </p>
                   {!stravaConnected && (
                     <p className="text-xs sm:text-sm text-gray-500 mt-2">
                       Connect to Strava to see your activities
@@ -464,7 +479,9 @@ const Dashboard: React.FC = () => {
           {/* Quick Actions */}
           <Card className="bg-reroute-card border-reroute-card">
             <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-white text-lg sm:text-xl">Quick Actions</CardTitle>
+              <CardTitle className="text-white text-lg sm:text-xl">
+                Quick Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-1 gap-2 sm:gap-3">

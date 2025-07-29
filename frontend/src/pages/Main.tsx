@@ -53,7 +53,9 @@ const Main: React.FC = () => {
                 className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-white/80'}`}
               />
               <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
+              <span className="sm:hidden text-xs">
+                {tab.label.split(' ')[0]}
+              </span>
             </button>
           ))}
         </div>

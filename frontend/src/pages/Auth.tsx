@@ -146,14 +146,18 @@ const Auth: React.FC = () => {
             {error && (
               <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-md flex items-start space-x-2">
                 <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs sm:text-sm text-red-400 break-words">{error}</p>
+                <p className="text-xs sm:text-sm text-red-400 break-words">
+                  {error}
+                </p>
               </div>
             )}
 
             {success && (
               <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-green-50 border border-green-50/20 rounded-md flex items-start space-x-2">
                 <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-green-500 break-words">{success}</p>
+                <p className="text-xs sm:text-sm text-green-500 break-words">
+                  {success}
+                </p>
               </div>
             )}
 
@@ -223,7 +227,10 @@ const Auth: React.FC = () => {
                 className="space-y-3 sm:space-y-4"
               >
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="register-email" className="text-white text-sm">
+                  <Label
+                    htmlFor="register-email"
+                    className="text-white text-sm"
+                  >
                     Email
                   </Label>
                   <Input
@@ -265,7 +272,10 @@ const Auth: React.FC = () => {
                 </div>
 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="register-password" className="text-white text-sm">
+                  <Label
+                    htmlFor="register-password"
+                    className="text-white text-sm"
+                  >
                     Password
                   </Label>
                   <Input
@@ -287,7 +297,10 @@ const Auth: React.FC = () => {
                 </div>
 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="confirm-password" className="text-white text-sm">
+                  <Label
+                    htmlFor="confirm-password"
+                    className="text-white text-sm"
+                  >
                     Confirm Password
                   </Label>
                   <Input

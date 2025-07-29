@@ -312,8 +312,12 @@ const Profile: React.FC = () => {
                               </p>
                             )}
                           </div>
-                          <div className={`p-2 sm:p-3 rounded-full ${stat.color} flex-shrink-0 ml-2`}>
-                            <div className="w-4 h-4 sm:w-6 sm:h-6">{stat.icon}</div>
+                          <div
+                            className={`p-2 sm:p-3 rounded-full ${stat.color} flex-shrink-0 ml-2`}
+                          >
+                            <div className="w-4 h-4 sm:w-6 sm:h-6">
+                              {stat.icon}
+                            </div>
                           </div>
                         </div>
                       </CardContent>
