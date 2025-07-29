@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = "changeme"
     TWILIO_VERIFY_SERVICE_SID: str = "changeme"
 
+    # SendGrid Configuration
+    SENDGRID_API_KEY: str = "changeme"
+    FROM_EMAIL: str = "noreply@reroute.training"
+    FRONTEND_URL: str = "https://reroute.training"
+
     # S3 Configuration
     S3_ENDPOINT_URL: str = "changeme"
     S3_ACCESS_KEY: str = "changeme"

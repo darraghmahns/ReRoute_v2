@@ -28,6 +28,7 @@ from app.schemas.auth import (
     UserResponse,
     UserUpdate,
 )
+from app.services.email import send_password_reset_email, send_welcome_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -59,6 +60,9 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     new_profile = Profile(id=new_user.id, profile_completed=False)
     db.add(new_profile)
     db.commit()
+
+    # Send welcome email
+    send_welcome_email(new_user.email, new_user.full_name)
 
     return new_user
 
@@ -138,11 +142,23 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
     db.add(reset_token_obj)
     db.commit()
 
-    # In a real implementation, you would send an email here
-    # For now, we'll return the token for testing (remove in production)
+    # Send password reset email
+    email_sent = send_password_reset_email(user.email, reset_token)
+
+    if not email_sent:
+        # Log the error but don't reveal it to the user for security
+        from app.core.config import settings
+
+        if settings.SENDGRID_API_KEY == "changeme":
+            # For development/testing - return the token
+            return {
+                "message": f"If an account with {request.email} exists, a password reset email has been sent.",
+                "reset_token": reset_token,  # Remove this in production
+                "dev_note": "SendGrid not configured - token returned for testing",
+            }
+
     return {
-        "message": f"If an account with {request.email} exists, a password reset email has been sent.",
-        "reset_token": reset_token,  # Remove this in production
+        "message": f"If an account with {request.email} exists, a password reset email has been sent."
     }
 
 

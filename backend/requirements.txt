@@ -17,3 +17,4 @@ requests==2.32.4
 openai==1.95.0
 geopy==2.4.1
 numpy==1.26.4
+sendgrid==6.11.0
