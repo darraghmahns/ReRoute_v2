@@ -58,7 +58,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           current_password: data.currentPassword,
@@ -74,7 +74,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       const result = await response.json();
       setSuccess(result.message);
       form.reset();
-      
+
       // Close modal after successful change
       setTimeout(() => {
         handleClose();

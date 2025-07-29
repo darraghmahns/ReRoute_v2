@@ -76,7 +76,7 @@ export const PasswordResetForm: React.FC = () => {
 
       const result = await response.json();
       setSuccess(result.message);
-      
+
       // Redirect to login after successful reset
       setTimeout(() => {
         navigate('/auth');

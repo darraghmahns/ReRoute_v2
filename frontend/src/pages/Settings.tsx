@@ -126,8 +126,8 @@ const Settings: React.FC = () => {
                   <p className="text-sm font-medium">Change Password</p>
                   <p className="text-xs text-gray-400">Update your password</p>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowChangePassword(true)}
                 >
