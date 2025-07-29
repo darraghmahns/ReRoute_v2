@@ -3,6 +3,7 @@ from typing import Optional
 
 import sendgrid
 from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import ClickTracking, TrackingSettings
 
 from app.core.config import settings
 
@@ -73,6 +74,10 @@ def send_password_reset_email(email: str, reset_token: str) -> bool:
             subject="Reset Your Reroute Password",
             html_content=html_content,
         )
+
+        # Disable click tracking to prevent redirect through SendGrid domains
+        message.tracking_settings = TrackingSettings()
+        message.tracking_settings.click_tracking = ClickTracking(enable=False)
 
         response = sg.send(message)
         logger.info(
@@ -146,6 +151,10 @@ def send_welcome_email(email: str, name: Optional[str] = None) -> bool:
             subject="Welcome to Reroute - Your AI Cycling Assistant!",
             html_content=html_content,
         )
+
+        # Disable click tracking to prevent redirect through SendGrid domains
+        message.tracking_settings = TrackingSettings()
+        message.tracking_settings.click_tracking = ClickTracking(enable=False)
 
         response = sg.send(message)
         logger.info(f"Welcome email sent to {email}, status: {response.status_code}")
