@@ -19,7 +19,7 @@ from app.api import (
 )
 from app.core.database import Base, engine
 
-app = FastAPI(title="Reroute - AI-Powered Cycling Training Assistant")
+app = FastAPI(title="Reroute - AI-Powered Cycling Training Assistant", version="1.0.1")
 
 # CORS settings for development
 app.add_middleware(
