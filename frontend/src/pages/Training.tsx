@@ -277,51 +277,59 @@ const Training: React.FC = () => {
         </div>
       ) : (
         /* Plan Display */
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Plan Header */}
           <Card className="bg-reroute-card border-reroute-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">
                     {currentPlan.name}
                   </h2>
-                  <p className="text-gray-400">
+                  <p className="text-gray-400 text-sm sm:text-base">
                     Training Goal: {currentPlan.goal}
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">
-                      {Math.round(getTotalTrainingTime() / 60)}h
+                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-6">
+                  <div className="grid grid-cols-3 gap-4 sm:flex sm:space-x-6">
+                    <div className="text-center">
+                      <div className="text-2xl sm:text-3xl font-bold text-white">
+                        {Math.round(getTotalTrainingTime() / 60)}h
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-400">
+                        Total Training Time
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                      Total Training Time
-                    </div>
-                  </div>
 
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-white">
-                      AI Generated
+                    <div className="text-center">
+                      <div className="text-sm sm:text-lg font-semibold text-white">
+                        AI Generated
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-400">
+                        Plan Type
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">Plan Type</div>
-                  </div>
 
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-white">
-                      {formatDate(currentPlan.created_at)}
+                    <div className="text-center">
+                      <div className="text-sm sm:text-lg font-semibold text-white">
+                        {formatDate(currentPlan.created_at)}
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-400">
+                        Plan Date
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">Plan Date</div>
                   </div>
 
                   <Button
                     onClick={() => setShowGenerateModal(true)}
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto text-sm sm:text-base"
+                    size="sm"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    Regenerate Plan
+                    <span className="hidden sm:inline">Regenerate Plan</span>
+                    <span className="sm:hidden">Regenerate</span>
                   </Button>
                 </div>
               </div>
@@ -329,22 +337,26 @@ const Training: React.FC = () => {
           </Card>
 
           {/* Week Navigation */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <Button
               onClick={() => navigateWeek('prev')}
               disabled={currentWeekIndex === 0}
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto order-2 sm:order-1"
+              size="sm"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous Week
+              <span className="hidden sm:inline">Previous Week</span>
+              <span className="sm:hidden">Previous</span>
             </Button>
 
-            <div className="text-center">
-              <h3 className="text-xl font-semibold text-white">
+            <div className="text-center order-1 sm:order-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">
                 Week {currentWeekIndex + 1}
               </h3>
-              <p className="text-gray-400">{getWeekRange()}</p>
+              <p className="text-gray-400 text-xs sm:text-base">
+                {getWeekRange()}
+              </p>
             </div>
 
             <Button
@@ -353,9 +365,11 @@ const Training: React.FC = () => {
                 currentWeekIndex >= currentPlan.plan_data.weeks.length - 1
               }
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto order-3"
+              size="sm"
             >
-              Next Week
+              <span className="hidden sm:inline">Next Week</span>
+              <span className="sm:hidden">Next</span>
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
