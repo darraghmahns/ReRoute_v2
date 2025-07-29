@@ -43,7 +43,7 @@ export interface StravaZonesResponse {
 
 // Get Strava OAuth URL
 export const getStravaAuthUrl = async (): Promise<{ auth_url: string }> => {
-  const res = await axios.get(`${API_URL}/strava/auth-url`, {
+  const res = await axios.get(`${API_URL}/api/strava/auth-url`, {
     headers: getAuthHeaders(),
   });
   return res.data;
@@ -54,7 +54,7 @@ export const handleStravaCallback = async (
   code: string
 ): Promise<StravaAuthResponse> => {
   const res = await axios.post(
-    `${API_URL}/strava/callback`,
+    `${API_URL}/api/strava/callback`,
     { code },
     {
       headers: {
@@ -70,7 +70,7 @@ export const handleStravaCallback = async (
 // Sync activities from Strava
 export const syncStravaActivities = async (): Promise<StravaSyncResponse> => {
   const res = await axios.post(
-    `${API_URL}/strava/sync`,
+    `${API_URL}/api/strava/sync`,
     {},
     {
       headers: getAuthHeaders(),
@@ -83,7 +83,7 @@ export const syncStravaActivities = async (): Promise<StravaSyncResponse> => {
 export const refreshStravaActivities =
   async (): Promise<StravaRefreshResponse> => {
     const res = await axios.post(
-      `${API_URL}/strava/sync/refresh`,
+      `${API_URL}/api/strava/sync/refresh`,
       {},
       {
         headers: getAuthHeaders(),
@@ -95,7 +95,7 @@ export const refreshStravaActivities =
 // Get activities from Strava
 export const getStravaActivities =
   async (): Promise<StravaActivitiesResponse> => {
-    const res = await axios.get(`${API_URL}/strava/activities`, {
+    const res = await axios.get(`${API_URL}/api/strava/activities`, {
       headers: getAuthHeaders(),
     });
     return res.data;
@@ -104,7 +104,7 @@ export const getStravaActivities =
 // Get athlete zones from Strava
 export const getStravaZones = async (): Promise<StravaZonesResponse> => {
   const res = await axios.post(
-    `${API_URL}/strava/zones`,
+    `${API_URL}/api/strava/zones`,
     {},
     {
       headers: getAuthHeaders(),
@@ -115,7 +115,7 @@ export const getStravaZones = async (): Promise<StravaZonesResponse> => {
 
 // Disconnect Strava
 export const disconnectStrava = async (): Promise<{ message: string }> => {
-  const res = await axios.delete(`${API_URL}/strava/disconnect`, {
+  const res = await axios.delete(`${API_URL}/api/strava/disconnect`, {
     headers: getAuthHeaders(),
   });
   return res.data;

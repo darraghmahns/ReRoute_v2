@@ -16,7 +16,7 @@ export const login = async (
     const form = new FormData();
     form.append('username', credentials.email);
     form.append('password', credentials.password);
-    const res = await axios.post(`${API_URL}/auth/login`, form, {
+    const res = await axios.post(`${API_URL}/api/auth/login`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     localStorage.setItem('token', res.data.access_token);
@@ -50,7 +50,7 @@ export const login = async (
 
 export const register = async (data: RegisterData): Promise<User> => {
   try {
-    const res = await axios.post(`${API_URL}/auth/register`, data);
+    const res = await axios.post(`${API_URL}/api/auth/register`, data);
     return res.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -96,13 +96,13 @@ export const register = async (data: RegisterData): Promise<User> => {
 export const logout = async (): Promise<void> => {
   localStorage.removeItem('token');
   // Optionally call backend logout endpoint
-  await axios.post(`${API_URL}/auth/logout`);
+  await axios.post(`${API_URL}/api/auth/logout`);
 };
 
 export const getCurrentUser = async (): Promise<User> => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('No token');
-  const res = await axios.get(`${API_URL}/auth/me`, {
+  const res = await axios.get(`${API_URL}/api/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -114,7 +114,7 @@ export const getCurrentUserWithProfile = async (): Promise<{
 }> => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('No token');
-  const res = await axios.get(`${API_URL}/auth/me/with-profile`, {
+  const res = await axios.get(`${API_URL}/api/auth/me/with-profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -127,7 +127,7 @@ export const updateUser = async (userData: {
   email?: string;
 }): Promise<User> => {
   try {
-    const res = await axios.put(`${API_URL}/auth/me`, userData, {
+    const res = await axios.put(`${API_URL}/api/auth/me`, userData, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     return res.data;

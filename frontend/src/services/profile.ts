@@ -11,7 +11,7 @@ const getAuthHeaders = () => {
 
 export const getProfile = async (): Promise<Profile> => {
   try {
-    const response = await axios.get(`${API_URL}/profiles/me`, {
+    const response = await axios.get(`${API_URL}/api/profiles/me`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -25,7 +25,7 @@ export const updateProfile = async (
   profileData: Partial<Profile>
 ): Promise<Profile> => {
   try {
-    const response = await axios.put(`${API_URL}/profiles/me`, profileData, {
+    const response = await axios.put(`${API_URL}/api/profiles/me`, profileData, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -37,7 +37,7 @@ export const updateProfile = async (
 
 export const getStravaActivities = async (): Promise<StravaActivity[]> => {
   try {
-    const response = await axios.get(`${API_URL}/strava/activities`, {
+    const response = await axios.get(`${API_URL}/api/strava/activities`, {
       headers: getAuthHeaders(),
     });
     return response.data.activities || [];
@@ -49,7 +49,7 @@ export const getStravaActivities = async (): Promise<StravaActivity[]> => {
 
 export const getCachedActivities = async (): Promise<StravaActivity[]> => {
   try {
-    const response = await axios.get(`${API_URL}/strava/activities/db`, {
+    const response = await axios.get(`${API_URL}/api/strava/activities/db`, {
       headers: getAuthHeaders(),
     });
     return response.data || [];
@@ -65,7 +65,7 @@ export const syncStravaActivities = async (): Promise<{
 }> => {
   try {
     const response = await axios.post(
-      `${API_URL}/strava/sync`,
+      `${API_URL}/api/strava/sync`,
       {},
       {
         headers: getAuthHeaders(),

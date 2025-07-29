@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 export const trainingService = {
   async generatePlan(request: GeneratePlanRequest): Promise<TrainingPlan> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans/generate`, {
+    const response = await fetch(`${API_URL}/api/training/plans/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ export const trainingService = {
 
   async getPlans(): Promise<TrainingPlan[]> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans`, {
+    const response = await fetch(`${API_URL}/api/training/plans`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -40,7 +40,7 @@ export const trainingService = {
 
   async getPlan(planId: string): Promise<TrainingPlan> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans/${planId}`, {
+    const response = await fetch(`${API_URL}/api/training/plans/${planId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -59,7 +59,7 @@ export const trainingService = {
   ): Promise<TrainingWeek> {
     const token = getToken();
     const response = await fetch(
-      `${API_URL}/training/plans/${planId}/week/${weekStartDate}`,
+      `${API_URL}/api/training/plans/${planId}/week/${weekStartDate}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -81,7 +81,7 @@ export const trainingService = {
   ): Promise<void> {
     const token = getToken();
     const response = await fetch(
-      `${API_URL}/training/plans/${planId}/workout/${workoutId}/complete?completed=${completed}`,
+      `${API_URL}/api/training/plans/${planId}/workout/${workoutId}/complete?completed=${completed}`,
       {
         method: 'PUT',
         headers: {
@@ -97,7 +97,7 @@ export const trainingService = {
 
   async deletePlan(planId: string): Promise<void> {
     const token = getToken();
-    const response = await fetch(`${API_URL}/training/plans/${planId}`, {
+    const response = await fetch(`${API_URL}/api/training/plans/${planId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,

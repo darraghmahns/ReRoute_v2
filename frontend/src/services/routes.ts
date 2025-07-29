@@ -103,7 +103,7 @@ export const generateRoute = async (
   params: RouteGenerationParams
 ): Promise<RouteGenerationResponse> => {
   try {
-    const response = await axios.post(`${API_URL}/routes/generate`, params, {
+    const response = await axios.post(`${API_URL}/api/routes/generate`, params, {
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ export const generateLoopRoute = async (
   route_type: 'road' | 'gravel' | 'mountain' | 'urban' = 'road'
 ): Promise<RouteGenerationResponse> => {
   try {
-    const response = await axios.post(`${API_URL}/routes/loops`, null, {
+    const response = await axios.post(`${API_URL}/api/routes/loops`, null, {
       params: {
         lat,
         lng,
@@ -173,7 +173,7 @@ export const generateAILoopRoute = async (
 ): Promise<RouteGenerationResponse> => {
   try {
     const response = await axios.post(
-      `${API_URL}/routes/generate-ai-loop`,
+      `${API_URL}/api/routes/generate-ai-loop`,
       null,
       {
         params: {
@@ -217,7 +217,7 @@ export const getUserRoutes = async (
       params.route_type = route_type;
     }
 
-    const response = await axios.get(`${API_URL}/routes/`, {
+    const response = await axios.get(`${API_URL}/api/routes/`, {
       params,
       headers: getAuthHeaders(),
     });
@@ -234,7 +234,7 @@ export const getUserRoutes = async (
 
 export const getRoute = async (routeId: string): Promise<Route> => {
   try {
-    const response = await axios.get(`${API_URL}/routes/${routeId}`, {
+    const response = await axios.get(`${API_URL}/api/routes/${routeId}`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -255,7 +255,7 @@ export const updateRoute = async (
   updates: { name?: string; description?: string; is_public?: boolean }
 ): Promise<Route> => {
   try {
-    const response = await axios.put(`${API_URL}/routes/${routeId}`, updates, {
+    const response = await axios.put(`${API_URL}/api/routes/${routeId}`, updates, {
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ export const updateRoute = async (
 
 export const deleteRoute = async (routeId: string): Promise<void> => {
   try {
-    await axios.delete(`${API_URL}/routes/${routeId}`, {
+    await axios.delete(`${API_URL}/api/routes/${routeId}`, {
       headers: getAuthHeaders(),
     });
   } catch (error) {
@@ -293,7 +293,7 @@ export const deleteRoute = async (routeId: string): Promise<void> => {
 
 export const downloadGPX = async (routeId: string): Promise<void> => {
   try {
-    const response = await axios.get(`${API_URL}/routes/${routeId}/gpx`, {
+    const response = await axios.get(`${API_URL}/api/routes/${routeId}/gpx`, {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });
@@ -325,7 +325,7 @@ export const getRouteSuggestions = async (
 ): Promise<unknown> => {
   try {
     const response = await axios.get(
-      `${API_URL}/routes/${routeId}/suggestions`,
+      `${API_URL}/api/routes/${routeId}/suggestions`,
       {
         headers: getAuthHeaders(),
       }
