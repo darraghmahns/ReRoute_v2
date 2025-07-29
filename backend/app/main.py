@@ -30,15 +30,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(profiles.router)
-app.include_router(routes.router)
-app.include_router(training.router)
-app.include_router(strava.router)
-app.include_router(chat.router)
-app.include_router(analytics.router)
-app.include_router(subscription.router)
+# Include routers with /api prefix
+app.include_router(auth.router, prefix="/api")
+app.include_router(profiles.router, prefix="/api")
+app.include_router(routes.router, prefix="/api")
+app.include_router(training.router, prefix="/api")
+app.include_router(strava.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+app.include_router(subscription.router, prefix="/api")
 
 
 # Try to create database tables, fall back gracefully if database is not available
