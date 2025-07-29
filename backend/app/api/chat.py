@@ -21,6 +21,7 @@ from app.schemas.chat import (  # schema
     ChatResponse,
 )
 from app.services.openai_chat import openai_chat_service
+from app.services.ai_agent import ai_agent
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -801,22 +802,76 @@ Based on the activity data above, please answer the user's question: {last_user_
                         {"role": "user", "content": last_user_message.content}
                     )
 
-        # OpenAI completion
+        # OpenAI completion with AI Agent function calling
         try:
-            logging.info(f"Sending {len(messages_for_openai)} messages to OpenAI")
+            logging.info(
+                f"Sending {len(messages_for_openai)} messages to OpenAI with AI Agent"
+            )
             logging.info(
                 f"Message types: {[msg['role'] for msg in messages_for_openai]}"
             )
 
-            ai_content: str = openai_chat_service.chat_completion(
+            # Get available agent tools
+            agent_tools = ai_agent.get_openai_tools()
+            logging.info(
+                f"Available agent tools: {[tool['function']['name'] for tool in agent_tools]}"
+            )
+
+            # Call OpenAI with function calling support
+            openai_response = openai_chat_service.chat_completion(
                 messages=messages_for_openai,
                 model=chat_request.model or "gpt-3.5-turbo",
                 max_tokens=chat_request.max_tokens or 1024,
                 temperature=chat_request.temperature or 0.7,
+                tools=agent_tools,
+                tool_choice="auto",
             )
 
-            logging.info(f"OpenAI response length: {len(ai_content)} characters")
-            logging.info(f"OpenAI response preview: {ai_content[:200]}...")
+            ai_content = openai_response.get("content", "")
+            tool_calls = openai_response.get("tool_calls", [])
+
+            # Execute any tool calls requested by the AI
+            tool_results = []
+            if tool_calls:
+                logging.info(f"AI requested {len(tool_calls)} tool calls")
+                for tool_call in tool_calls:
+                    if "error" not in tool_call:
+                        result = ai_agent.execute_tool(
+                            tool_call["name"], tool_call["arguments"], db, current_user
+                        )
+                        tool_results.append(
+                            {"tool": tool_call["name"], "result": result}
+                        )
+                        logging.info(
+                            f"Executed tool {tool_call['name']}: {result['success']}"
+                        )
+                    else:
+                        logging.error(f"Tool call error: {tool_call['error']}")
+
+            # Combine AI response with tool results
+            if tool_results:
+                successful_actions = [r for r in tool_results if r["result"]["success"]]
+                failed_actions = [r for r in tool_results if not r["result"]["success"]]
+
+                action_summary = ""
+                if successful_actions:
+                    action_summary += "\n\n✅ **Actions Completed:**\n"
+                    for action in successful_actions:
+                        result_msg = action["result"]["result"].get(
+                            "message", "Action completed"
+                        )
+                        action_summary += f"- {result_msg}\n"
+
+                if failed_actions:
+                    action_summary += "\n\n❌ **Actions Failed:**\n"
+                    for action in failed_actions:
+                        error_msg = action["result"]["error"]
+                        action_summary += f"- {action['tool']}: {error_msg}\n"
+
+                ai_content = (ai_content or "") + action_summary
+
+            logging.info(f"Final response length: {len(ai_content)} characters")
+            logging.info(f"Response preview: {ai_content[:200]}...")
 
         except Exception as e:
             # Fallback response if OpenAI fails

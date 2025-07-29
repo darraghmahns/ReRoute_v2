@@ -1,9 +1,13 @@
-from typing import List
+from typing import List, Optional, Dict, Any
+import json
+import logging
 
 import openai
 
 from app.core.config import settings
 from app.schemas.chat import ChatMessage
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIChatService:
@@ -27,15 +31,81 @@ class OpenAIChatService:
         model: str = "gpt-3.5-turbo",
         max_tokens: int = 256,
         temperature: float = 0.7,
-    ) -> str:
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: str = "auto",
+    ) -> Dict[str, Any]:
+        """
+        Enhanced chat completion with function calling support.
+
+        Returns:
+            Dict containing:
+            - content: The assistant's text response (if any)
+            - tool_calls: List of tool calls the AI wants to make (if any)
+            - finish_reason: How the response ended
+        """
         client = self._get_client()
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        return response.choices[0].message.content
+
+        # Prepare the API call
+        api_params = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+
+        # Add tools if provided
+        if tools:
+            api_params["tools"] = tools
+            api_params["tool_choice"] = tool_choice
+            logger.info(f"Making OpenAI call with {len(tools)} tools available")
+
+        response = client.chat.completions.create(**api_params)
+
+        message = response.choices[0].message
+        finish_reason = response.choices[0].finish_reason
+
+        result = {
+            "content": message.content,
+            "tool_calls": [],
+            "finish_reason": finish_reason,
+        }
+
+        # Handle tool calls if present
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                try:
+                    parsed_args = json.loads(tool_call.function.arguments)
+                    result["tool_calls"].append(
+                        {
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "arguments": parsed_args,
+                        }
+                    )
+                    logger.info(f"AI requested tool call: {tool_call.function.name}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse tool arguments: {e}")
+                    result["tool_calls"].append(
+                        {
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "arguments": {},
+                            "error": "Failed to parse arguments",
+                        }
+                    )
+
+        return result
+
+    def chat_completion_simple(
+        self,
+        messages: List[dict],
+        model: str = "gpt-3.5-turbo",
+        max_tokens: int = 256,
+        temperature: float = 0.7,
+    ) -> str:
+        """Simple chat completion that returns just the text content (backward compatibility)."""
+        result = self.chat_completion(messages, model, max_tokens, temperature)
+        return result["content"] or ""
 
 
 openai_chat_service = OpenAIChatService()
