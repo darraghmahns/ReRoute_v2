@@ -61,6 +61,10 @@ jobs:
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
     
+    - name: Update SendGrid secret
+      run: |
+        echo -n "${{ secrets.SENDGRID_API_KEY }}" | gcloud secrets versions add SENDGRID_API_KEY --data-file=-
+    
     - name: Build and deploy
       run: |
         cd backend
