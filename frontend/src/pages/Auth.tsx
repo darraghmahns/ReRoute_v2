@@ -20,6 +20,7 @@ import {
   type LoginFormData,
   type RegisterFormData,
 } from '../lib/validations';
+import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 const Auth: React.FC = () => {
@@ -27,6 +28,7 @@ const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { user, login, register, loading, authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -206,6 +208,17 @@ const Auth: React.FC = () => {
                   )}
                 </div>
 
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-xs sm:text-sm text-reroute-primary hover:text-reroute-primary/80 underline"
+                    disabled={isSubmitting}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full bg-reroute-primary hover:bg-reroute-primary/80 text-white disabled:opacity-50 h-10 sm:h-auto text-sm sm:text-base mt-4 sm:mt-6"
@@ -353,6 +366,11 @@ const Auth: React.FC = () => {
             </Button>
           </CardFooter>
         </Card>
+
+        <ForgotPasswordModal
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+        />
       </div>
     </div>
   );

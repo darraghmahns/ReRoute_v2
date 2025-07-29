@@ -12,6 +12,13 @@ const AuthPage = React.lazy(() => import('./pages/Auth'));
 const StravaCallbackPage = React.lazy(() => import('./pages/StravaCallback'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFound'));
 
+// Lazy load password reset component
+const PasswordResetPageComponent = React.lazy(() => 
+  import('./components/PasswordResetForm').then(module => ({ 
+    default: module.PasswordResetForm 
+  }))
+);
+
 // Component to handle root route with potential Strava callback
 const RootHandler: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -47,6 +54,7 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/reset-password" element={<PasswordResetPageComponent />} />
               <Route path="/strava-callback" element={<StravaCallbackPage />} />
 
               {/* Root route with Strava callback detection */}

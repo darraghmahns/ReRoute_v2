@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     STRAVA_CLIENT_ID: str = "changeme"
     STRAVA_CLIENT_SECRET: str = "changeme"
     STRAVA_WEBHOOK_SECRET: str = "changeme"
+    STRAVA_REDIRECT_URI: str = "changeme"
 
     # Stripe Configuration
     STRIPE_API_KEY: str = "changeme"

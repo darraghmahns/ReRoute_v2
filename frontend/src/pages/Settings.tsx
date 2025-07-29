@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getCurrentUserWithProfile } from '../services/auth';
 import StravaConnection from '../components/StravaConnection';
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ const Settings: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [stravaConnected, setStravaConnected] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -124,7 +126,11 @@ const Settings: React.FC = () => {
                   <p className="text-sm font-medium">Change Password</p>
                   <p className="text-xs text-gray-400">Update your password</p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowChangePassword(true)}
+                >
                   Change
                 </Button>
               </div>
@@ -233,6 +239,11 @@ const Settings: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        <ChangePasswordModal
+          isOpen={showChangePassword}
+          onClose={() => setShowChangePassword(false)}
+        />
       </div>
     </div>
   );

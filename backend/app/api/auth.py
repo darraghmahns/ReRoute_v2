@@ -1,4 +1,5 @@
-from datetime import timedelta
+import secrets
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -16,8 +17,9 @@ from app.core.security import (
     invalidate_session,
     verify_password,
 )
-from app.models.user import User
+from app.models.user import User, PasswordResetToken
 from app.schemas.auth import (
+    ChangePassword,
     PasswordReset,
     PasswordResetRequest,
     Token,
@@ -116,24 +118,75 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         # Don't reveal if email exists or not for security
-        return {"message": f"Password reset email sent to {request.email}"}
+        return {
+            "message": f"If an account with {request.email} exists, a password reset email has been sent."
+        }
 
-    # In a real implementation, you would:
-    # 1. Generate reset token
-    # 2. Send email with reset link
-    # 3. Store reset token with expiration
+    # Generate secure reset token
+    reset_token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)  # 1 hour expiration
 
-    return {"message": f"Password reset email sent to {request.email}"}
+    # Invalidate any existing reset tokens for this user
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id, PasswordResetToken.used == False
+    ).update({"used": True})
+
+    # Create new reset token
+    reset_token_obj = PasswordResetToken(
+        user_id=user.id, token=reset_token, expires_at=expires_at
+    )
+    db.add(reset_token_obj)
+    db.commit()
+
+    # In a real implementation, you would send an email here
+    # For now, we'll return the token for testing (remove in production)
+    return {
+        "message": f"If an account with {request.email} exists, a password reset email has been sent.",
+        "reset_token": reset_token,  # Remove this in production
+    }
 
 
 @router.post("/reset-password")
 def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
     """Password reset confirmation"""
-    # In a real implementation, you would:
-    # 1. Verify reset token
-    # 2. Check token expiration
-    # 3. Update user password
-    # 4. Invalidate reset token
+    # Find the reset token
+    reset_token = (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.token == reset_data.token,
+            PasswordResetToken.used == False,
+            PasswordResetToken.expires_at > datetime.utcnow(),
+        )
+        .first()
+    )
+
+    if not reset_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    # Get the user
+    user = db.query(User).filter(User.id == reset_token.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Update user password
+    user.hashed_password = get_password_hash(reset_data.new_password)
+
+    # Mark token as used
+    reset_token.used = True
+
+    # Invalidate all user sessions for security
+    from app.models.user import UserSession
+
+    db.query(UserSession).filter(
+        UserSession.user_id == user.id, UserSession.is_active == True
+    ).update({"is_active": False})
+
+    db.commit()
 
     return {"message": "Password successfully reset"}
 
@@ -182,3 +235,26 @@ def me_with_profile(
     profile = db.query(Profile).filter(Profile.id == current_user.id).first()
 
     return {"user": current_user, "profile": profile}
+
+
+@router.post("/change-password")
+def change_password(
+    password_data: ChangePassword,
+    current_user: User = Depends(get_current_active_user_by_session),
+    db: Session = Depends(get_db),
+):
+    """Change password for authenticated user"""
+    # Verify current password
+    if not verify_password(
+        password_data.current_password, current_user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    # Update password
+    current_user.hashed_password = get_password_hash(password_data.new_password)
+    db.commit()
+
+    return {"message": "Password successfully changed"}
