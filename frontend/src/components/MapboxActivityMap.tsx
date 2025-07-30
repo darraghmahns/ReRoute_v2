@@ -23,20 +23,8 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
-  // Check for Mapbox token
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div 
-        className="bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-sm"
-        style={{ height: `${height}px` }}
-      >
-        Mapbox token not configured
-      </div>
-    );
-  }
-
   useEffect(() => {
-    if (!summary_polyline || !mapContainer.current) return;
+    if (!MAPBOX_TOKEN || !summary_polyline || !mapContainer.current) return;
 
     // Decode polyline to [lat, lng] pairs
     const coordinates: [number, number][] = polyline
@@ -92,6 +80,18 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({
       mapRef.current?.remove();
     };
   }, [summary_polyline]);
+
+  // Show error message if no Mapbox token
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div 
+        className="bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-sm"
+        style={{ height: `${height}px` }}
+      >
+        Mapbox token not configured
+      </div>
+    );
+  }
 
   return (
     <div
