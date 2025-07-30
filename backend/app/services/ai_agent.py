@@ -350,18 +350,41 @@ class AIAgent:
 
     # Tool Implementation Methods
 
+    def _get_or_create_user_training_plan(
+        self, db: Session, user: User
+    ) -> TrainingPlan:
+        """Get the user's training plan using the same logic as the UI (active plan or most recent)."""
+        # First try to get active plan
+        plan = (
+            db.query(TrainingPlan)
+            .filter(TrainingPlan.user_id == user.id, TrainingPlan.is_active == True)
+            .first()
+        )
+        if plan:
+            return plan
+
+        # Fallback to most recent plan if no active plan
+        plan = (
+            db.query(TrainingPlan)
+            .filter(TrainingPlan.user_id == user.id)
+            .order_by(TrainingPlan.created_at.desc())
+            .first()
+        )
+        if plan:
+            return plan
+
+        # Create new plan only if user has no plans at all
+        plan = TrainingPlan(user_id=user.id, plan_data={}, is_active=True)
+        db.add(plan)
+        return plan
+
     def _update_training_plan(
         self, db: Session, user: User, field: str, value: str, reason: str
     ) -> Dict[str, Any]:
         """Update a specific field in the user's training plan."""
         try:
-            # Get or create training plan
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                plan = TrainingPlan(user_id=user.id, plan_data={})
-                db.add(plan)
+            # Get or create training plan using UI logic
+            plan = self._get_or_create_user_training_plan(db, user)
 
             # Initialize plan_data if needed
             if plan.plan_data is None:
@@ -417,13 +440,8 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Add a new training block to the user's plan."""
         try:
-            # Get or create training plan
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                plan = TrainingPlan(user_id=user.id, plan_data={})
-                db.add(plan)
+            # Get or create training plan using UI logic
+            plan = self._get_or_create_user_training_plan(db, user)
 
             if plan.plan_data is None:
                 plan.plan_data = {}
@@ -864,11 +882,7 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Modify the intensity of specific workouts in the training plan."""
         try:
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                return {"error": "No training plan found"}
+            plan = self._get_or_create_user_training_plan(db, user)
 
             if plan.plan_data is None:
                 plan.plan_data = {}
@@ -976,11 +990,7 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Schedule a recovery week in the training plan."""
         try:
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                return {"error": "No training plan found"}
+            plan = self._get_or_create_user_training_plan(db, user)
 
             if plan.plan_data is None:
                 plan.plan_data = {}
@@ -1088,11 +1098,7 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Adjust the overall training volume for specific weeks or the entire plan."""
         try:
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                return {"error": "No training plan found"}
+            plan = self._get_or_create_user_training_plan(db, user)
 
             if plan.plan_data is None:
                 plan.plan_data = {}
@@ -1198,11 +1204,7 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Add or modify periodization phases in the training plan."""
         try:
-            plan = (
-                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
-            )
-            if not plan:
-                return {"error": "No training plan found"}
+            plan = self._get_or_create_user_training_plan(db, user)
 
             if plan.plan_data is None:
                 plan.plan_data = {}

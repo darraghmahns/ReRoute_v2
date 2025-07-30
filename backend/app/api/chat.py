@@ -88,9 +88,19 @@ def _strava_streams_summary(db: Session, user: User, limit: int = 3) -> str:
 
 def _training_plan_summary(db: Session, user: User) -> str:
     try:
+        # Get training plan using same logic as UI (active plan or most recent)
         plan: TrainingPlan | None = (
-            db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            db.query(TrainingPlan)
+            .filter(TrainingPlan.user_id == user.id, TrainingPlan.is_active == True)
+            .first()
         )
+        if not plan:
+            plan = (
+                db.query(TrainingPlan)
+                .filter(TrainingPlan.user_id == user.id)
+                .order_by(TrainingPlan.created_at.desc())
+                .first()
+            )
         if not plan:
             return "No training plan defined yet."
         details = plan.plan_data or {}
@@ -490,9 +500,19 @@ def _get_recent_activities_with_details(
 def _get_detailed_training_plan(db: Session, user: User) -> str:
     """Get comprehensive training plan information."""
     try:
+        # Get training plan using same logic as UI (active plan or most recent)
         plan: TrainingPlan | None = (
-            db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            db.query(TrainingPlan)
+            .filter(TrainingPlan.user_id == user.id, TrainingPlan.is_active == True)
+            .first()
         )
+        if not plan:
+            plan = (
+                db.query(TrainingPlan)
+                .filter(TrainingPlan.user_id == user.id)
+                .order_by(TrainingPlan.created_at.desc())
+                .first()
+            )
         if not plan:
             return "No training plan created yet."
 
@@ -701,12 +721,23 @@ def _parse_and_update_training_plan(
         except ValueError:
             value = value_raw
 
+    # Get training plan using same logic as UI and AI agent
     plan: TrainingPlan | None = (
-        db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+        db.query(TrainingPlan)
+        .filter(TrainingPlan.user_id == user.id, TrainingPlan.is_active == True)
+        .first()
     )
     if not plan:
-        # create new plan
-        plan = TrainingPlan(user_id=user.id, plan_data={})
+        # Fallback to most recent plan
+        plan = (
+            db.query(TrainingPlan)
+            .filter(TrainingPlan.user_id == user.id)
+            .order_by(TrainingPlan.created_at.desc())
+            .first()
+        )
+    if not plan:
+        # create new plan only if user has no plans
+        plan = TrainingPlan(user_id=user.id, plan_data={}, is_active=True)
         db.add(plan)
 
     if plan.plan_data is None:
