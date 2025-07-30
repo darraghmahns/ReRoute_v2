@@ -209,28 +209,28 @@ class AIAgent:
                 db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
             )
             if not plan:
-                plan = TrainingPlan(user_id=user.id, details={})
+                plan = TrainingPlan(user_id=user.id, plan_data={})
                 db.add(plan)
 
-            # Initialize details if needed
-            if plan.details is None:
-                plan.details = {}
+            # Initialize plan_data if needed
+            if plan.plan_data is None:
+                plan.plan_data = {}
 
             # Convert value to appropriate type
             processed_value = self._process_value(value)
 
             # Store the old value for logging
-            old_value = plan.details.get(field, "Not set")
+            old_value = plan.plan_data.get(field, "Not set")
 
             # Update the field
-            plan.details[field] = processed_value
+            plan.plan_data[field] = processed_value
             plan.updated_at = datetime.utcnow()
 
             # Log the change
-            if "change_log" not in plan.details:
-                plan.details["change_log"] = []
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
 
-            plan.details["change_log"].append(
+            plan.plan_data["change_log"].append(
                 {
                     "timestamp": datetime.utcnow().isoformat(),
                     "field": field,
@@ -271,19 +271,19 @@ class AIAgent:
                 db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
             )
             if not plan:
-                plan = TrainingPlan(user_id=user.id, details={})
+                plan = TrainingPlan(user_id=user.id, plan_data={})
                 db.add(plan)
 
-            if plan.details is None:
-                plan.details = {}
+            if plan.plan_data is None:
+                plan.plan_data = {}
 
             # Initialize training blocks if needed
-            if "training_blocks" not in plan.details:
-                plan.details["training_blocks"] = []
+            if "training_blocks" not in plan.plan_data:
+                plan.plan_data["training_blocks"] = []
 
             # Create new training block
             new_block = {
-                "id": len(plan.details["training_blocks"]) + 1,
+                "id": len(plan.plan_data["training_blocks"]) + 1,
                 "type": block_type,
                 "details": details,
                 "schedule": schedule,
@@ -291,7 +291,7 @@ class AIAgent:
                 "created_by": "AI Agent",
             }
 
-            plan.details["training_blocks"].append(new_block)
+            plan.plan_data["training_blocks"].append(new_block)
             plan.updated_at = datetime.utcnow()
 
             db.commit()
