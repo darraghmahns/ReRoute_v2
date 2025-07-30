@@ -107,12 +107,27 @@ PERSONALIZATION GUIDELINES:
 Note: No Strava data available. Generating a general training plan.
 """
 
+        # Calculate the current week's Monday and subsequent weeks
+        today = datetime.now().date()
+        current_monday = today - timedelta(days=today.weekday())
+        week_dates = []
+        for i in range(4):
+            week_start = current_monday + timedelta(weeks=i)
+            week_dates.append(week_start.strftime("%Y-%m-%d"))
+
         prompt = f"""
 Generate a 4-week cycling training plan with the following specifications:
 
 Goal: {goal}
 Weekly Hours: {weekly_hours}
 Fitness Level: {fitness_level}{preferences_text}{strava_text}
+
+IMPORTANT DATE REQUIREMENTS:
+- Week 1 starts on: {week_dates[0]}
+- Week 2 starts on: {week_dates[1]}
+- Week 3 starts on: {week_dates[2]}
+- Week 4 starts on: {week_dates[3]}
+- Use these EXACT dates in your week_start_date fields
 
 Requirements:
 - Create exactly 4 weeks of training

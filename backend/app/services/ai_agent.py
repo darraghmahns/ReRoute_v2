@@ -49,13 +49,13 @@ class AIAgent:
         self.register_tool(
             AgentTool(
                 name="update_training_plan",
-                description="Update specific fields in the user's training plan",
+                description="Update specific fields in the user's training plan, including day-specific workouts (monday, tuesday, etc.)",
                 parameters={
                     "type": "object",
                     "properties": {
                         "field": {
                             "type": "string",
-                            "description": "The field to update (e.g., 'weekly_training_hours', 'goal', 'current_phase')",
+                            "description": "The field to update (e.g., 'monday', 'tuesday', 'weekly_training_hours', 'goal')",
                         },
                         "value": {
                             "type": "string",
@@ -69,6 +69,19 @@ class AIAgent:
                     "required": ["field", "value", "reason"],
                 },
                 function=self._update_training_plan,
+            )
+        )
+
+        self.register_tool(
+            AgentTool(
+                name="update_training_plan_dates",
+                description="Update the training plan to use current dates instead of old dates",
+                parameters={
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+                function=self.update_training_plan_dates,
             )
         )
 
@@ -1444,6 +1457,56 @@ class AIAgent:
                 "action": "add_periodization_phase",
                 "phase": new_phase,
                 "message": f"Successfully added {phase_name} phase for weeks {start_week}-{start_week + duration_weeks - 1}",
+            }
+
+        except Exception as e:
+            db.rollback()
+            raise e
+
+    def update_training_plan_dates(self, db: Session, user: User) -> Dict[str, Any]:
+        """Update an existing training plan to use current dates."""
+        try:
+            plan = self._get_or_create_user_training_plan(db, user)
+
+            if not plan.plan_data or "weeks" not in plan.plan_data:
+                return {"error": "No training plan found or plan has no weeks"}
+
+            # Calculate current week dates
+            from datetime import datetime, timedelta
+
+            today = datetime.now().date()
+            current_monday = today - timedelta(days=today.weekday())
+
+            # Update each week's start date
+            updates_made = []
+            for i, week in enumerate(plan.plan_data["weeks"]):
+                old_date = week.get("week_start_date", "Unknown")
+                new_date = (current_monday + timedelta(weeks=i)).strftime("%Y-%m-%d")
+                week["week_start_date"] = new_date
+                updates_made.append(f"Week {i+1}: {old_date} → {new_date}")
+
+            plan.updated_at = datetime.utcnow()
+
+            # Log the change
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
+
+            plan.plan_data["change_log"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "action": "update_training_plan_dates",
+                    "details": {"updates": updates_made},
+                    "reason": "Updated training plan to use current dates",
+                    "changed_by": "AI Agent",
+                }
+            )
+
+            db.commit()
+
+            return {
+                "action": "update_training_plan_dates",
+                "updates": updates_made,
+                "message": f"Successfully updated {len(updates_made)} weeks to current dates",
             }
 
         except Exception as e:
