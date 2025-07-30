@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /auth
+Allow: /dashboard
+Allow: /training
+Allow: /routes
+Allow: /chat
+Allow: /profile
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /static/
+
+# Sitemap
+Sitemap: https://reroute.training/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

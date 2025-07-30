@@ -5,7 +5,11 @@ import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import polyline from '@mapbox/polyline';
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+if (MAPBOX_TOKEN) {
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+}
 
 interface MapboxActivityMapProps {
   summary_polyline: string;
@@ -18,6 +22,18 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+
+  // Check for Mapbox token
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div 
+        className="bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-sm"
+        style={{ height: `${height}px` }}
+      >
+        Mapbox token not configured
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!summary_polyline || !mapContainer.current) return;
