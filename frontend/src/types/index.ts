@@ -143,7 +143,7 @@ export interface TrainingPlan {
       changed_by: string;
     }>;
     // Allow for other dynamic fields the AI agent might add
-    [key: string]: unknown;
+    [key: string]: string | number | boolean | null | undefined | Array<unknown> | Record<string, unknown>;
   };
   created_at: string;
   updated_at: string;

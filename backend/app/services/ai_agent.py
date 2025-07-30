@@ -393,11 +393,27 @@ class AIAgent:
             # Convert value to appropriate type
             processed_value = self._process_value(value)
 
-            # Store the old value for logging
-            old_value = plan.plan_data.get(field, "Not set")
+            # Check if this is a day-specific update (monday, tuesday, etc.)
+            days_of_week = [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday",
+            ]
 
-            # Update the field
-            plan.plan_data[field] = processed_value
+            if field.lower() in days_of_week:
+                # Handle day-specific workout updates
+                old_value = self._update_workout_for_day(
+                    plan, field.lower(), processed_value, reason
+                )
+            else:
+                # Handle general plan field updates
+                old_value = plan.plan_data.get(field, "Not set")
+                plan.plan_data[field] = processed_value
+
             plan.updated_at = datetime.utcnow()
 
             # Log the change
@@ -429,6 +445,152 @@ class AIAgent:
         except Exception as e:
             db.rollback()
             raise e
+
+    def _update_workout_for_day(
+        self, plan: TrainingPlan, day: str, workout_value: str, reason: str
+    ) -> str:
+        """Update a specific day's workout in the training plan structure."""
+        import uuid
+
+        # Initialize weeks if needed
+        if "weeks" not in plan.plan_data:
+            plan.plan_data["weeks"] = []
+
+        # If no weeks exist, create a default week starting today
+        if not plan.plan_data["weeks"]:
+            from datetime import datetime, timedelta
+
+            # Find the Monday of this week
+            today = datetime.now()
+            monday = today - timedelta(days=today.weekday())
+
+            plan.plan_data["weeks"].append(
+                {
+                    "week_start_date": monday.strftime("%Y-%m-%d"),
+                    "workouts": {
+                        "monday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "tuesday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "wednesday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "thursday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "friday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "saturday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                        "sunday": {
+                            "id": str(uuid.uuid4()),
+                            "title": "Rest Day",
+                            "workout_type": "rest",
+                            "duration_minutes": 0,
+                            "description": "Rest day",
+                            "completed": False,
+                        },
+                    },
+                }
+            )
+
+        # Get the first week (for simplicity, update the current/first week)
+        week = plan.plan_data["weeks"][0]
+        old_workout = week["workouts"][day]
+        old_value = old_workout.get("title", "Rest Day")
+
+        # Update the workout
+        if workout_value.lower() in ["strength training", "strength"]:
+            week["workouts"][day].update(
+                {
+                    "title": "Strength Training",
+                    "workout_type": "cross_training",
+                    "duration_minutes": 60,
+                    "description": f"Strength training session focusing on functional movement and cycling-specific exercises. {reason}",
+                }
+            )
+        elif workout_value.lower() in ["endurance", "endurance ride"]:
+            week["workouts"][day].update(
+                {
+                    "title": "Endurance Ride",
+                    "workout_type": "endurance",
+                    "duration_minutes": 90,
+                    "description": f"Steady-state endurance ride to build aerobic capacity. {reason}",
+                }
+            )
+        elif workout_value.lower() in ["rest", "rest day"]:
+            week["workouts"][day].update(
+                {
+                    "title": "Rest Day",
+                    "workout_type": "rest",
+                    "duration_minutes": 0,
+                    "description": f"Recovery day for optimal training adaptation. {reason}",
+                }
+            )
+        elif workout_value.lower() in ["threshold", "threshold ride"]:
+            week["workouts"][day].update(
+                {
+                    "title": "Threshold Ride",
+                    "workout_type": "threshold",
+                    "duration_minutes": 75,
+                    "description": f"Lactate threshold intervals to improve sustainable power. {reason}",
+                }
+            )
+        elif workout_value.lower() in ["vo2max", "vo2 max", "intervals"]:
+            week["workouts"][day].update(
+                {
+                    "title": "VO2max Intervals",
+                    "workout_type": "vo2max",
+                    "duration_minutes": 60,
+                    "description": f"High-intensity intervals to improve maximum oxygen uptake. {reason}",
+                }
+            )
+        else:
+            # Generic workout update
+            week["workouts"][day].update(
+                {
+                    "title": workout_value,
+                    "workout_type": "endurance",
+                    "duration_minutes": 60,
+                    "description": f"Custom workout: {workout_value}. {reason}",
+                }
+            )
+
+        return old_value
 
     def _add_training_block(
         self,
