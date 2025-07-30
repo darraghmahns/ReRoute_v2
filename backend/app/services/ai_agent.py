@@ -123,6 +123,157 @@ class AIAgent:
             )
         )
 
+        # Phase 2: Advanced Training Plan Tools
+        self.register_tool(
+            AgentTool(
+                name="modify_workout_intensity",
+                description="Modify the intensity of specific workouts in the training plan",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "day": {
+                            "type": "string",
+                            "enum": [
+                                "monday",
+                                "tuesday",
+                                "wednesday",
+                                "thursday",
+                                "friday",
+                                "saturday",
+                                "sunday",
+                            ],
+                            "description": "Day of the week to modify",
+                        },
+                        "week_number": {
+                            "type": "integer",
+                            "description": "Week number to modify (1-based index)",
+                        },
+                        "intensity_adjustment": {
+                            "type": "string",
+                            "enum": ["increase", "decrease", "maintain"],
+                            "description": "How to adjust the workout intensity",
+                        },
+                        "adjustment_percentage": {
+                            "type": "integer",
+                            "description": "Percentage to adjust intensity by (5-50%)",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for the intensity modification",
+                        },
+                    },
+                    "required": ["day", "intensity_adjustment", "reason"],
+                },
+                function=self._modify_workout_intensity,
+            )
+        )
+
+        self.register_tool(
+            AgentTool(
+                name="schedule_recovery_week",
+                description="Schedule a recovery week in the training plan",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "week_number": {
+                            "type": "integer",
+                            "description": "Week number to convert to recovery (1-based index)",
+                        },
+                        "recovery_level": {
+                            "type": "string",
+                            "enum": ["light", "moderate", "complete"],
+                            "description": "Level of recovery for the week",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for scheduling recovery week",
+                        },
+                    },
+                    "required": ["recovery_level", "reason"],
+                },
+                function=self._schedule_recovery_week,
+            )
+        )
+
+        self.register_tool(
+            AgentTool(
+                name="adjust_training_volume",
+                description="Adjust the overall training volume for specific weeks or the entire plan",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "adjustment_type": {
+                            "type": "string",
+                            "enum": ["increase", "decrease", "taper"],
+                            "description": "Type of volume adjustment",
+                        },
+                        "target_weeks": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "description": "Specific week numbers to adjust (empty for all weeks)",
+                        },
+                        "volume_change_percent": {
+                            "type": "integer",
+                            "description": "Percentage to change volume by (5-50%)",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "Reason for volume adjustment",
+                        },
+                    },
+                    "required": ["adjustment_type", "volume_change_percent", "reason"],
+                },
+                function=self._adjust_training_volume,
+            )
+        )
+
+        self.register_tool(
+            AgentTool(
+                name="add_periodization_phase",
+                description="Add or modify periodization phases in the training plan",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "phase_name": {
+                            "type": "string",
+                            "enum": [
+                                "base",
+                                "build",
+                                "peak",
+                                "recovery",
+                                "preparation",
+                            ],
+                            "description": "Name of the training phase",
+                        },
+                        "start_week": {
+                            "type": "integer",
+                            "description": "Week number when phase starts (1-based index)",
+                        },
+                        "duration_weeks": {
+                            "type": "integer",
+                            "description": "Duration of the phase in weeks",
+                        },
+                        "focus_areas": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Primary focus areas for this phase (endurance, power, recovery, etc.)",
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Description of what this phase aims to achieve",
+                        },
+                    },
+                    "required": [
+                        "phase_name",
+                        "start_week",
+                        "duration_weeks",
+                        "focus_areas",
+                    ],
+                },
+                function=self._add_periodization_phase,
+            )
+        )
+
         # Route Generation Tools (placeholders for now)
         self.register_tool(
             AgentTool(
@@ -313,33 +464,335 @@ class AIAgent:
         analysis_type: str,
         metrics: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Analyze training progress and return insights."""
+        """Analyze training progress and return insights using real Strava data."""
         try:
-            # This is a placeholder - in a full implementation, this would:
-            # 1. Query Strava activities
-            # 2. Analyze trends in the specified metrics
-            # 3. Compare against training plan goals
-            # 4. Generate recommendations
+            from app.models.user import Profile
+            from app.models.strava import StravaActivity
+            import requests
+            from datetime import datetime, timedelta
+
+            # Get user's profile and Strava connection
+            profile = db.query(Profile).filter(Profile.id == user.id).first()
+
+            if not profile or not profile.strava_access_token:
+                return {
+                    "action": "analyze_training_progress",
+                    "analysis_type": analysis_type,
+                    "error": "Strava not connected",
+                    "insights": [
+                        "Connect your Strava account to get personalized training analysis"
+                    ],
+                    "recommendations": ["Connect to Strava in your profile settings"],
+                    "message": "Unable to analyze progress - Strava account not connected",
+                }
+
+            # Get recent activities from Strava API
+            activities_url = "https://www.strava.com/api/v3/athlete/activities"
+            headers = {"Authorization": f"Bearer {profile.strava_access_token}"}
+
+            # Determine time range based on analysis type
+            now = datetime.now()
+            if analysis_type == "weekly":
+                after_date = now - timedelta(weeks=4)  # Last 4 weeks
+                per_page = 30
+            elif analysis_type == "monthly":
+                after_date = now - timedelta(weeks=12)  # Last 3 months
+                per_page = 50
+            else:  # performance_trend
+                after_date = now - timedelta(weeks=8)  # Last 2 months
+                per_page = 40
+
+            params = {"per_page": per_page, "after": int(after_date.timestamp())}
+
+            response = requests.get(activities_url, headers=headers, params=params)
+
+            if response.status_code != 200:
+                return {
+                    "action": "analyze_training_progress",
+                    "analysis_type": analysis_type,
+                    "error": "Failed to fetch Strava activities",
+                    "insights": ["Unable to retrieve recent activity data"],
+                    "recommendations": ["Check your Strava connection and try again"],
+                    "message": "Analysis failed - could not access Strava data",
+                }
+
+            activities = response.json()
+
+            if not activities:
+                return {
+                    "action": "analyze_training_progress",
+                    "analysis_type": analysis_type,
+                    "insights": [
+                        "No recent activities found in the selected time period"
+                    ],
+                    "recommendations": [
+                        "Log some activities on Strava to get training analysis"
+                    ],
+                    "message": "No recent activities to analyze",
+                }
+
+            # Filter for cycling activities
+            cycling_activities = [
+                act for act in activities if act.get("type") in ["Ride", "VirtualRide"]
+            ]
+
+            if not cycling_activities:
+                return {
+                    "action": "analyze_training_progress",
+                    "analysis_type": analysis_type,
+                    "insights": [
+                        "No cycling activities found in the selected time period"
+                    ],
+                    "recommendations": [
+                        "Log some cycling activities to get training analysis"
+                    ],
+                    "message": "Connect more cycling activities to get insights",
+                }
+
+            # Analyze the data
+            analysis_results = self._perform_strava_analysis(
+                cycling_activities,
+                analysis_type,
+                metrics or ["power", "distance", "heartrate"],
+            )
 
             return {
                 "action": "analyze_training_progress",
                 "analysis_type": analysis_type,
-                "metrics": metrics or ["power", "distance", "cadence"],
-                "insights": [
-                    "This is a placeholder analysis",
-                    "In the full implementation, this would analyze your Strava data",
-                    "And provide specific insights based on your training plan",
-                ],
-                "recommendations": [
-                    "Continue current training pattern",
-                    "Consider adding more recovery days",
-                    "Focus on consistency over intensity",
-                ],
-                "message": f"Completed {analysis_type} analysis for specified metrics",
+                "metrics": metrics or ["power", "distance", "heartrate"],
+                "activities_analyzed": len(cycling_activities),
+                "insights": analysis_results["insights"],
+                "recommendations": analysis_results["recommendations"],
+                "data_summary": analysis_results["summary"],
+                "message": f"Analyzed {len(cycling_activities)} cycling activities for {analysis_type} trends",
             }
 
         except Exception as e:
-            raise e
+            logger.error(f"Error in analyze_training_progress: {str(e)}")
+            return {
+                "action": "analyze_training_progress",
+                "analysis_type": analysis_type,
+                "error": str(e),
+                "insights": ["Unable to complete analysis due to an error"],
+                "recommendations": ["Try again later or check your Strava connection"],
+                "message": "Analysis failed due to technical error",
+            }
+
+    def _perform_strava_analysis(
+        self, activities: List[Dict], analysis_type: str, metrics: List[str]
+    ) -> Dict[str, Any]:
+        """Perform detailed analysis on Strava activities."""
+        from statistics import mean, median
+        from datetime import datetime, timedelta
+
+        # Calculate basic metrics
+        total_distance = (
+            sum(act.get("distance", 0) for act in activities) / 1000
+        )  # Convert to km
+        total_time = (
+            sum(act.get("moving_time", 0) for act in activities) / 3600
+        )  # Convert to hours
+        total_elevation = sum(act.get("total_elevation_gain", 0) for act in activities)
+
+        # Calculate averages for activities with data
+        avg_speeds = [
+            act.get("average_speed", 0) * 3.6
+            for act in activities
+            if act.get("average_speed")
+        ]  # Convert to km/h
+        avg_powers = [
+            act.get("average_watts") for act in activities if act.get("average_watts")
+        ]
+        avg_heartrates = [
+            act.get("average_heartrate")
+            for act in activities
+            if act.get("average_heartrate")
+        ]
+
+        # Time-based analysis
+        activity_dates = [
+            datetime.fromisoformat(act.get("start_date", "").replace("Z", "+00:00"))
+            for act in activities
+        ]
+        activity_dates.sort()
+
+        # Weekly consistency
+        if activity_dates:
+            date_range = (activity_dates[-1] - activity_dates[0]).days
+            weeks_covered = max(1, date_range / 7)
+            activities_per_week = len(activities) / weeks_covered
+        else:
+            activities_per_week = 0
+            weeks_covered = 1
+
+        # Generate insights based on analysis type
+        insights = []
+        recommendations = []
+
+        if analysis_type == "weekly":
+            insights.append(
+                f"You've completed {len(activities)} cycling activities in the last 4 weeks"
+            )
+            insights.append(
+                f"Average {activities_per_week:.1f} rides per week with {total_distance:.1f}km total distance"
+            )
+
+            if activities_per_week < 2:
+                recommendations.append(
+                    "Consider increasing ride frequency for better consistency"
+                )
+            elif activities_per_week > 5:
+                recommendations.append(
+                    "Great consistency! Make sure to include recovery days"
+                )
+
+            if avg_powers:
+                avg_power = mean(avg_powers)
+                insights.append(
+                    f"Average power output: {avg_power:.0f}W across recent rides"
+                )
+                if avg_power < 150:
+                    recommendations.append(
+                        "Focus on building base power through consistent training"
+                    )
+                elif avg_power > 250:
+                    recommendations.append(
+                        "Strong power numbers! Consider power-based interval training"
+                    )
+
+        elif analysis_type == "monthly":
+            monthly_distance = total_distance
+            insights.append(
+                f"Monthly distance: {monthly_distance:.1f}km over {len(activities)} rides"
+            )
+            insights.append(f"Total elevation gained: {total_elevation:.0f}m")
+
+            if monthly_distance < 200:
+                recommendations.append(
+                    "Consider gradually increasing monthly distance for endurance development"
+                )
+            elif monthly_distance > 800:
+                recommendations.append(
+                    "Impressive volume! Ensure adequate recovery between sessions"
+                )
+
+            if avg_heartrates:
+                avg_hr = mean(avg_heartrates)
+                insights.append(
+                    f"Average heart rate: {avg_hr:.0f} bpm across activities"
+                )
+                recommendations.append(
+                    "Monitor heart rate trends to track fitness improvements"
+                )
+
+        else:  # performance_trend
+            if len(activities) >= 5:
+                # Analyze trend in recent vs older activities
+                recent_activities = activities[: len(activities) // 2]
+                older_activities = activities[len(activities) // 2 :]
+
+                recent_avg_speed = mean(
+                    [
+                        act.get("average_speed", 0) * 3.6
+                        for act in recent_activities
+                        if act.get("average_speed")
+                    ]
+                )
+                older_avg_speed = mean(
+                    [
+                        act.get("average_speed", 0) * 3.6
+                        for act in older_activities
+                        if act.get("average_speed")
+                    ]
+                )
+
+                if recent_avg_speed > older_avg_speed * 1.05:
+                    insights.append(
+                        "Performance trending upward - your average speed has improved!"
+                    )
+                    recommendations.append(
+                        "Continue current training approach - it's working well"
+                    )
+                elif recent_avg_speed < older_avg_speed * 0.95:
+                    insights.append(
+                        "Performance may be plateauing or declining slightly"
+                    )
+                    recommendations.append(
+                        "Consider adding variety or increasing training intensity"
+                    )
+                else:
+                    insights.append(
+                        "Performance is stable - maintaining consistent output"
+                    )
+                    recommendations.append(
+                        "Good consistency! Consider progressive overload for improvement"
+                    )
+
+                if avg_powers and len(avg_powers) >= 5:
+                    recent_powers = [
+                        act.get("average_watts")
+                        for act in recent_activities
+                        if act.get("average_watts")
+                    ]
+                    older_powers = [
+                        act.get("average_watts")
+                        for act in older_activities
+                        if act.get("average_watts")
+                    ]
+
+                    if recent_powers and older_powers:
+                        recent_power = mean(recent_powers)
+                        older_power = mean(older_powers)
+                        power_change = (
+                            (recent_power - older_power) / older_power
+                        ) * 100
+
+                        insights.append(
+                            f"Power output change: {power_change:+.1f}% over analyzed period"
+                        )
+
+                        if power_change > 5:
+                            recommendations.append(
+                                "Power is increasing well! Consider FTP testing"
+                            )
+                        elif power_change < -5:
+                            recommendations.append(
+                                "Power declining - check for overtraining or need for recovery"
+                            )
+            else:
+                insights.append("Need more activities for meaningful trend analysis")
+                recommendations.append(
+                    "Complete more rides to get detailed performance insights"
+                )
+
+        # Add general recommendations based on data availability
+        if not avg_powers:
+            recommendations.append(
+                "Consider using a power meter for more detailed training analysis"
+            )
+        if not avg_heartrates:
+            recommendations.append(
+                "Heart rate data would provide valuable training zone insights"
+            )
+
+        summary = {
+            "total_activities": len(activities),
+            "total_distance_km": round(total_distance, 1),
+            "total_time_hours": round(total_time, 1),
+            "total_elevation_m": round(total_elevation, 0),
+            "avg_speed_kmh": round(mean(avg_speeds), 1) if avg_speeds else None,
+            "avg_power_w": round(mean(avg_powers), 0) if avg_powers else None,
+            "avg_heartrate_bpm": round(mean(avg_heartrates), 0)
+            if avg_heartrates
+            else None,
+            "activities_per_week": round(activities_per_week, 1),
+        }
+
+        return {
+            "insights": insights,
+            "recommendations": recommendations,
+            "summary": summary,
+        }
 
     def _generate_workout_route(
         self,
@@ -396,6 +849,442 @@ class AIAgent:
 
         # Return as string
         return value
+
+    # Phase 2: Advanced Training Plan Tool Implementations
+
+    def _modify_workout_intensity(
+        self,
+        db: Session,
+        user: User,
+        day: str,
+        intensity_adjustment: str,
+        reason: str,
+        week_number: Optional[int] = None,
+        adjustment_percentage: int = 15,
+    ) -> Dict[str, Any]:
+        """Modify the intensity of specific workouts in the training plan."""
+        try:
+            plan = (
+                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            )
+            if not plan:
+                return {"error": "No training plan found"}
+
+            if plan.plan_data is None:
+                plan.plan_data = {}
+
+            if "weeks" not in plan.plan_data or not plan.plan_data["weeks"]:
+                return {"error": "No weeks found in training plan"}
+
+            # Determine which weeks to modify
+            target_weeks = []
+            if week_number is not None:
+                if 1 <= week_number <= len(plan.plan_data["weeks"]):
+                    target_weeks = [week_number - 1]  # Convert to 0-based index
+                else:
+                    return {"error": f"Invalid week number: {week_number}"}
+            else:
+                # Apply to all weeks if no specific week provided
+                target_weeks = list(range(len(plan.plan_data["weeks"])))
+
+            modifications_made = []
+            for week_idx in target_weeks:
+                week = plan.plan_data["weeks"][week_idx]
+                if "workouts" in week and day in week["workouts"]:
+                    workout = week["workouts"][day]
+                    old_duration = workout.get("duration_minutes", 0)
+
+                    # Adjust intensity based on duration and FTP percentages
+                    if intensity_adjustment == "increase":
+                        new_duration = int(
+                            old_duration * (1 + adjustment_percentage / 100)
+                        )
+                        if "ftp_percentage_min" in workout:
+                            workout["ftp_percentage_min"] = min(
+                                120, workout["ftp_percentage_min"] + 5
+                            )
+                        if "ftp_percentage_max" in workout:
+                            workout["ftp_percentage_max"] = min(
+                                130, workout["ftp_percentage_max"] + 5
+                            )
+                    elif intensity_adjustment == "decrease":
+                        new_duration = int(
+                            old_duration * (1 - adjustment_percentage / 100)
+                        )
+                        if "ftp_percentage_min" in workout:
+                            workout["ftp_percentage_min"] = max(
+                                50, workout["ftp_percentage_min"] - 5
+                            )
+                        if "ftp_percentage_max" in workout:
+                            workout["ftp_percentage_max"] = max(
+                                60, workout["ftp_percentage_max"] - 5
+                            )
+                    else:  # maintain
+                        new_duration = old_duration
+
+                    workout["duration_minutes"] = max(
+                        15, new_duration
+                    )  # Minimum 15 minutes
+                    modifications_made.append(
+                        {
+                            "week": week_idx + 1,
+                            "day": day,
+                            "old_duration": old_duration,
+                            "new_duration": workout["duration_minutes"],
+                        }
+                    )
+
+            # Log the changes
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
+
+            plan.plan_data["change_log"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "action": "modify_workout_intensity",
+                    "details": {
+                        "day": day,
+                        "intensity_adjustment": intensity_adjustment,
+                        "adjustment_percentage": adjustment_percentage,
+                        "modifications": modifications_made,
+                    },
+                    "reason": reason,
+                    "changed_by": "AI Agent",
+                }
+            )
+
+            plan.updated_at = datetime.utcnow()
+            db.commit()
+
+            return {
+                "action": "modify_workout_intensity",
+                "modifications": modifications_made,
+                "message": f"Successfully {intensity_adjustment}d intensity for {day} workouts. Reason: {reason}",
+            }
+
+        except Exception as e:
+            db.rollback()
+            raise e
+
+    def _schedule_recovery_week(
+        self,
+        db: Session,
+        user: User,
+        recovery_level: str,
+        reason: str,
+        week_number: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Schedule a recovery week in the training plan."""
+        try:
+            plan = (
+                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            )
+            if not plan:
+                return {"error": "No training plan found"}
+
+            if plan.plan_data is None:
+                plan.plan_data = {}
+
+            if "weeks" not in plan.plan_data or not plan.plan_data["weeks"]:
+                return {"error": "No weeks found in training plan"}
+
+            # Find next week to convert to recovery if not specified
+            if week_number is None:
+                week_number = len(plan.plan_data["weeks"]) // 4 + 1  # Every 4th week
+
+            if not (1 <= week_number <= len(plan.plan_data["weeks"])):
+                return {"error": f"Invalid week number: {week_number}"}
+
+            week_idx = week_number - 1
+            week = plan.plan_data["weeks"][week_idx]
+
+            # Define recovery levels
+            recovery_settings = {
+                "light": {"duration_multiplier": 0.7, "intensity_reduction": 10},
+                "moderate": {"duration_multiplier": 0.5, "intensity_reduction": 20},
+                "complete": {"duration_multiplier": 0.3, "intensity_reduction": 30},
+            }
+
+            settings = recovery_settings[recovery_level]
+
+            # Modify all workouts in the week
+            if "workouts" in week:
+                for day, workout in week["workouts"].items():
+                    if workout.get("workout_type") != "rest":
+                        # Reduce duration and intensity
+                        workout["duration_minutes"] = int(
+                            workout.get("duration_minutes", 60)
+                            * settings["duration_multiplier"]
+                        )
+
+                        # Change workout type to recovery if it's high intensity
+                        if workout.get("workout_type") in ["threshold", "vo2max"]:
+                            workout["workout_type"] = "recovery"
+
+                        # Reduce FTP percentages
+                        if "ftp_percentage_min" in workout:
+                            workout["ftp_percentage_min"] = max(
+                                50,
+                                workout["ftp_percentage_min"]
+                                - settings["intensity_reduction"],
+                            )
+                        if "ftp_percentage_max" in workout:
+                            workout["ftp_percentage_max"] = max(
+                                65,
+                                workout["ftp_percentage_max"]
+                                - settings["intensity_reduction"],
+                            )
+
+            # Mark week as recovery week
+            if "week_metadata" not in plan.plan_data:
+                plan.plan_data["week_metadata"] = {}
+
+            plan.plan_data["week_metadata"][str(week_number)] = {
+                "type": "recovery",
+                "level": recovery_level,
+                "scheduled_by": "AI Agent",
+                "reason": reason,
+            }
+
+            # Log the change
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
+
+            plan.plan_data["change_log"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "action": "schedule_recovery_week",
+                    "details": {
+                        "week_number": week_number,
+                        "recovery_level": recovery_level,
+                    },
+                    "reason": reason,
+                    "changed_by": "AI Agent",
+                }
+            )
+
+            plan.updated_at = datetime.utcnow()
+            db.commit()
+
+            return {
+                "action": "schedule_recovery_week",
+                "week_number": week_number,
+                "recovery_level": recovery_level,
+                "message": f"Successfully scheduled {recovery_level} recovery week for week {week_number}. Reason: {reason}",
+            }
+
+        except Exception as e:
+            db.rollback()
+            raise e
+
+    def _adjust_training_volume(
+        self,
+        db: Session,
+        user: User,
+        adjustment_type: str,
+        volume_change_percent: int,
+        reason: str,
+        target_weeks: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """Adjust the overall training volume for specific weeks or the entire plan."""
+        try:
+            plan = (
+                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            )
+            if not plan:
+                return {"error": "No training plan found"}
+
+            if plan.plan_data is None:
+                plan.plan_data = {}
+
+            if "weeks" not in plan.plan_data or not plan.plan_data["weeks"]:
+                return {"error": "No weeks found in training plan"}
+
+            # Determine which weeks to adjust
+            if target_weeks is None:
+                week_indices = list(range(len(plan.plan_data["weeks"])))
+            else:
+                week_indices = [
+                    w - 1
+                    for w in target_weeks
+                    if 1 <= w <= len(plan.plan_data["weeks"])
+                ]
+
+            volume_multiplier = 1.0
+            if adjustment_type == "increase":
+                volume_multiplier = 1 + (volume_change_percent / 100)
+            elif adjustment_type == "decrease":
+                volume_multiplier = 1 - (volume_change_percent / 100)
+            elif adjustment_type == "taper":
+                # Taper reduces volume progressively
+                volume_multiplier = 1 - (volume_change_percent / 100)
+
+            adjustments_made = []
+            for week_idx in week_indices:
+                week = plan.plan_data["weeks"][week_idx]
+                if "workouts" in week:
+                    week_total_before = 0
+                    week_total_after = 0
+
+                    for day, workout in week["workouts"].items():
+                        old_duration = workout.get("duration_minutes", 0)
+                        week_total_before += old_duration
+
+                        if workout.get("workout_type") != "rest":
+                            new_duration = int(old_duration * volume_multiplier)
+                            workout["duration_minutes"] = max(15, new_duration)
+                            week_total_after += workout["duration_minutes"]
+                        else:
+                            week_total_after += old_duration
+
+                    adjustments_made.append(
+                        {
+                            "week": week_idx + 1,
+                            "total_minutes_before": week_total_before,
+                            "total_minutes_after": week_total_after,
+                            "change_percent": round(
+                                (
+                                    (week_total_after - week_total_before)
+                                    / max(1, week_total_before)
+                                )
+                                * 100,
+                                1,
+                            ),
+                        }
+                    )
+
+            # Log the change
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
+
+            plan.plan_data["change_log"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "action": "adjust_training_volume",
+                    "details": {
+                        "adjustment_type": adjustment_type,
+                        "volume_change_percent": volume_change_percent,
+                        "target_weeks": target_weeks or "all",
+                        "adjustments": adjustments_made,
+                    },
+                    "reason": reason,
+                    "changed_by": "AI Agent",
+                }
+            )
+
+            plan.updated_at = datetime.utcnow()
+            db.commit()
+
+            return {
+                "action": "adjust_training_volume",
+                "adjustment_type": adjustment_type,
+                "adjustments": adjustments_made,
+                "message": f"Successfully {adjustment_type}d training volume by {volume_change_percent}%. Reason: {reason}",
+            }
+
+        except Exception as e:
+            db.rollback()
+            raise e
+
+    def _add_periodization_phase(
+        self,
+        db: Session,
+        user: User,
+        phase_name: str,
+        start_week: int,
+        duration_weeks: int,
+        focus_areas: List[str],
+        description: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Add or modify periodization phases in the training plan."""
+        try:
+            plan = (
+                db.query(TrainingPlan).filter(TrainingPlan.user_id == user.id).first()
+            )
+            if not plan:
+                return {"error": "No training plan found"}
+
+            if plan.plan_data is None:
+                plan.plan_data = {}
+
+            # Initialize periodization structure
+            if "periodization" not in plan.plan_data:
+                plan.plan_data["periodization"] = {"phases": []}
+
+            # Validate week range
+            total_weeks = len(plan.plan_data.get("weeks", []))
+            if start_week < 1 or start_week + duration_weeks - 1 > total_weeks:
+                return {
+                    "error": f"Phase weeks {start_week}-{start_week + duration_weeks - 1} exceed plan duration of {total_weeks} weeks"
+                }
+
+            # Create new phase
+            new_phase = {
+                "name": phase_name,
+                "start_week": start_week,
+                "end_week": start_week + duration_weeks - 1,
+                "duration_weeks": duration_weeks,
+                "focus_areas": focus_areas,
+                "description": description
+                or f"{phase_name.title()} phase focusing on {', '.join(focus_areas)}",
+                "created_by": "AI Agent",
+                "created_at": datetime.utcnow().isoformat(),
+            }
+
+            # Remove any overlapping phases
+            existing_phases = plan.plan_data["periodization"]["phases"]
+            non_overlapping_phases = []
+            for phase in existing_phases:
+                if not (
+                    start_week <= phase["end_week"]
+                    and phase["start_week"] <= start_week + duration_weeks - 1
+                ):
+                    non_overlapping_phases.append(phase)
+
+            non_overlapping_phases.append(new_phase)
+            plan.plan_data["periodization"]["phases"] = sorted(
+                non_overlapping_phases, key=lambda p: p["start_week"]
+            )
+
+            # Apply phase-specific modifications to workouts
+            phase_settings = {
+                "base": {"endurance_focus": 0.7, "intensity_focus": 0.3},
+                "build": {"endurance_focus": 0.5, "intensity_focus": 0.5},
+                "peak": {"endurance_focus": 0.3, "intensity_focus": 0.7},
+                "recovery": {"endurance_focus": 0.8, "intensity_focus": 0.2},
+                "preparation": {"endurance_focus": 0.6, "intensity_focus": 0.4},
+            }
+
+            settings = phase_settings.get(
+                phase_name, {"endurance_focus": 0.5, "intensity_focus": 0.5}
+            )
+
+            # Log the change
+            if "change_log" not in plan.plan_data:
+                plan.plan_data["change_log"] = []
+
+            plan.plan_data["change_log"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "action": "add_periodization_phase",
+                    "details": new_phase,
+                    "reason": f"Added {phase_name} phase to structure training progression",
+                    "changed_by": "AI Agent",
+                }
+            )
+
+            plan.updated_at = datetime.utcnow()
+            db.commit()
+
+            return {
+                "action": "add_periodization_phase",
+                "phase": new_phase,
+                "message": f"Successfully added {phase_name} phase for weeks {start_week}-{start_week + duration_weeks - 1}",
+            }
+
+        except Exception as e:
+            db.rollback()
+            raise e
 
 
 # Global agent instance
