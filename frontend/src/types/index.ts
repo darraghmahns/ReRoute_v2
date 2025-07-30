@@ -137,13 +137,13 @@ export interface TrainingPlan {
     change_log?: Array<{
       timestamp: string;
       field: string;
-      old_value: any;
-      new_value: any;
+      old_value: string | number | boolean | null;
+      new_value: string | number | boolean | null;
       reason: string;
       changed_by: string;
     }>;
     // Allow for other dynamic fields the AI agent might add
-    [key: string]: any;
+    [key: string]: unknown;
   };
   created_at: string;
   updated_at: string;
