@@ -93,7 +93,7 @@ def _training_plan_summary(db: Session, user: User) -> str:
         )
         if not plan:
             return "No training plan defined yet."
-        details = plan.details or {}
+        details = plan.plan_data or {}
         weekly_hours = details.get("weekly_training_hours")
         goal = details.get("goal")
         parts = []
@@ -499,8 +499,8 @@ def _get_detailed_training_plan(db: Session, user: User) -> str:
         plan_details = []
         plan_details.append("## Current Training Plan")
 
-        if plan.details:
-            details = plan.details
+        if plan.plan_data:
+            details = plan.plan_data
 
             # Weekly structure
             if details.get("weekly_training_hours"):
@@ -541,6 +541,34 @@ def _get_detailed_training_plan(db: Session, user: User) -> str:
 
         plan_details.append(f"Plan created: {plan.created_at.strftime('%Y-%m-%d')}")
         plan_details.append(f"Last updated: {plan.updated_at.strftime('%Y-%m-%d')}")
+
+        # Add AI Agent modifications if available
+        if details.get("change_log"):
+            plan_details.append("\n## Recent AI Agent Modifications")
+            change_log = details["change_log"]
+            # Show last 3 changes
+            recent_changes = change_log[-3:] if len(change_log) > 3 else change_log
+            for change in recent_changes:
+                timestamp = change.get("timestamp", "Unknown time")
+                action = change.get("action", "Unknown action")
+                reason = change.get("reason", "No reason provided")
+                plan_details.append(f"- **{timestamp[:19]}**: {action} - {reason}")
+
+            if len(change_log) > 3:
+                plan_details.append(f"... and {len(change_log) - 3} other changes")
+
+        # Add any other AI agent fields
+        ai_fields = [
+            "workout_type",
+            "training_blocks",
+            "week_metadata",
+            "periodization",
+        ]
+        for field in ai_fields:
+            if field in details:
+                plan_details.append(
+                    f"AI Agent {field.replace('_', ' ').title()}: {details[field]}"
+                )
 
         return "\n".join(plan_details)
     except Exception:
@@ -678,12 +706,12 @@ def _parse_and_update_training_plan(
     )
     if not plan:
         # create new plan
-        plan = TrainingPlan(user_id=user.id, details={})
+        plan = TrainingPlan(user_id=user.id, plan_data={})
         db.add(plan)
 
-    if plan.details is None:
-        plan.details = {}
-    plan.details[field] = value
+    if plan.plan_data is None:
+        plan.plan_data = {}
+    plan.plan_data[field] = value
     plan.updated_at = datetime.utcnow()
     db.commit()
     feedback = f"Your training plan has been updated: {field} -> {value}."
