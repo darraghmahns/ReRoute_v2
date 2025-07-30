@@ -25,9 +25,13 @@ export const updateProfile = async (
   profileData: Partial<Profile>
 ): Promise<Profile> => {
   try {
-    const response = await axios.put(`${API_URL}/api/profiles/me`, profileData, {
-      headers: getAuthHeaders(),
-    });
+    const response = await axios.put(
+      `${API_URL}/api/profiles/me`,
+      profileData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error updating profile:', error);

@@ -103,12 +103,16 @@ export const generateRoute = async (
   params: RouteGenerationParams
 ): Promise<RouteGenerationResponse> => {
   try {
-    const response = await axios.post(`${API_URL}/api/routes/generate`, params, {
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axios.post(
+      `${API_URL}/api/routes/generate`,
+      params,
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -255,12 +259,16 @@ export const updateRoute = async (
   updates: { name?: string; description?: string; is_public?: boolean }
 ): Promise<Route> => {
   try {
-    const response = await axios.put(`${API_URL}/api/routes/${routeId}`, updates, {
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axios.put(
+      `${API_URL}/api/routes/${routeId}`,
+      updates,
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
