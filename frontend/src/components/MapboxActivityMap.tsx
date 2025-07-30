@@ -84,7 +84,7 @@ const MapboxActivityMap: React.FC<MapboxActivityMapProps> = ({
   // Show error message if no Mapbox token
   if (!MAPBOX_TOKEN) {
     return (
-      <div 
+      <div
         className="bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-sm"
         style={{ height: `${height}px` }}
       >
