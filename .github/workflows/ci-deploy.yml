@@ -31,6 +31,9 @@ jobs:
         npm run typecheck
         npm run format:check
         npm run build
+        # Copy frontend build to backend static directory
+        mkdir -p ../backend/static
+        cp -r dist/* ../backend/static/
     
     - uses: actions/setup-python@v5
       with:
