@@ -132,6 +132,18 @@ export interface TrainingPlan {
   is_active: boolean;
   plan_data: {
     weeks: TrainingWeek[];
+    // AI agent dynamic fields
+    workout_type?: string;
+    change_log?: Array<{
+      timestamp: string;
+      field: string;
+      old_value: any;
+      new_value: any;
+      reason: string;
+      changed_by: string;
+    }>;
+    // Allow for other dynamic fields the AI agent might add
+    [key: string]: any;
   };
   created_at: string;
   updated_at: string;
