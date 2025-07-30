@@ -29,7 +29,7 @@ const Chat: React.FC = () => {
   useEffect(() => {
     const token = getToken();
     if (user && token) {
-      fetch(`${API_URL}/chat/history`, {
+      fetch(`${API_URL}/api/chat/history`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -193,7 +193,7 @@ const Chat: React.FC = () => {
             (async () => {
               try {
                 const token = getToken();
-                const res = await fetch(`${API_URL}/chat/message`, {
+                const res = await fetch(`${API_URL}/api/chat/message`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
