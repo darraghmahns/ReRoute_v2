@@ -12,6 +12,7 @@ import {
   Dumbbell,
   Activity,
   Zap as ZapIcon,
+  RefreshCw,
 } from 'lucide-react';
 import {
   Card,
@@ -146,6 +147,15 @@ const Training: React.FC = () => {
 
   useEffect(() => {
     loadPlans();
+    
+    // Auto-refresh training plans every 30 seconds when tab is active
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadPlans();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadPlans = async () => {
@@ -289,6 +299,17 @@ const Training: React.FC = () => {
                   <p className="text-gray-400 text-sm sm:text-base">
                     Training Goal: {currentPlan.goal}
                   </p>
+                  {/* Show AI agent updates */}
+                  {currentPlan.plan_data?.workout_type && (
+                    <p className="text-reroute-primary text-sm mt-1">
+                      🤖 AI Update: Workout type set to {currentPlan.plan_data.workout_type}
+                    </p>
+                  )}
+                  {currentPlan.plan_data?.change_log && currentPlan.plan_data.change_log.length > 0 && (
+                    <p className="text-reroute-primary text-sm mt-1">
+                      🤖 Last updated by AI: {new Date(currentPlan.plan_data.change_log[currentPlan.plan_data.change_log.length - 1].timestamp).toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-6">
@@ -321,16 +342,29 @@ const Training: React.FC = () => {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => setShowGenerateModal(true)}
-                    variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto text-sm sm:text-base"
-                    size="sm"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Regenerate Plan</span>
-                    <span className="sm:hidden">Regenerate</span>
-                  </Button>
+                  <div className="flex space-x-2 w-full sm:w-auto">
+                    <Button
+                      onClick={loadPlans}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 sm:flex-none text-sm sm:text-base"
+                      size="sm"
+                      disabled={loading}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Refresh</span>
+                      <span className="sm:hidden">Refresh</span>
+                    </Button>
+                    <Button
+                      onClick={() => setShowGenerateModal(true)}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700 flex-1 sm:flex-none text-sm sm:text-base"
+                      size="sm"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Regenerate Plan</span>
+                      <span className="sm:hidden">Regenerate</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
