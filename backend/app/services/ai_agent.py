@@ -370,10 +370,11 @@ class AIAgent:
         print(f"🔥 AI AGENT DEBUG: Getting training plan for user {user.id}")
         logger.info(f"AI Agent: Getting training plan for user {user.id}")
 
-        # First try to get active plan
+        # First try to get active plan (most recently updated one if multiple active)
         plan = (
             db.query(TrainingPlan)
             .filter(TrainingPlan.user_id == user.id, TrainingPlan.is_active == True)
+            .order_by(TrainingPlan.created_at.desc())  # Get newest active plan
             .first()
         )
         if plan:

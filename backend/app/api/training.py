@@ -39,6 +39,18 @@ def generate_plan(
             strava_data=strava_data,
         )
 
+        # Deactivate any existing active plans before creating new one
+        existing_active_plans = (
+            db.query(TrainingPlan)
+            .filter(
+                TrainingPlan.user_id == current_user.id, TrainingPlan.is_active == True
+            )
+            .all()
+        )
+        for plan in existing_active_plans:
+            plan.is_active = False
+            print(f"🔥 TRAINING DEBUG: Deactivated old plan {plan.id}")
+
         # Create the training plan in the database
         training_plan = TrainingPlan(
             user_id=current_user.id,
@@ -47,7 +59,10 @@ def generate_plan(
             weekly_hours=request.weekly_hours,
             start_date=datetime.now(),
             plan_data=plan_data,
+            is_active=True,  # Explicitly set as active
         )
+
+        print(f"🔥 TRAINING DEBUG: Creating new active plan for user {current_user.id}")
 
         db.add(training_plan)
         db.commit()
