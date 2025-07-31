@@ -581,7 +581,15 @@ class AIAgent:
         old_value = old_workout.get("title", "Rest Day")
 
         # Update the workout
+        print(
+            f"🔥 WORKOUT UPDATE DEBUG: Updating {day} workout with value '{workout_value}'"
+        )
+        print(
+            f"🔥 WORKOUT UPDATE DEBUG: Old workout title: '{old_workout.get('title', 'Unknown')}'"
+        )
+
         if workout_value.lower() in ["strength training", "strength"]:
+            print(f"🔥 WORKOUT UPDATE DEBUG: Matched strength training pattern")
             week["workouts"][day].update(
                 {
                     "title": "Strength Training",
@@ -589,6 +597,9 @@ class AIAgent:
                     "duration_minutes": 60,
                     "description": f"Strength training session focusing on functional movement and cycling-specific exercises. {reason}",
                 }
+            )
+            print(
+                f"🔥 WORKOUT UPDATE DEBUG: Updated {day} title to: '{week['workouts'][day]['title']}')"
             )
         elif workout_value.lower() in ["endurance", "endurance ride"]:
             week["workouts"][day].update(
