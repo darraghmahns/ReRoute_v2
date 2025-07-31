@@ -158,12 +158,25 @@ def list_plans(
     db: Session = Depends(get_db),
 ):
     """List all training plans for the current user"""
+    print(f"🔥 TRAINING API DEBUG: Getting plans for user {current_user.id}")
+
+    # Order by is_active first (active plans first), then by created_at desc
     plans = (
         db.query(TrainingPlan)
         .filter(TrainingPlan.user_id == current_user.id)
-        .order_by(TrainingPlan.created_at.desc())
+        .order_by(TrainingPlan.is_active.desc(), TrainingPlan.updated_at.desc())
         .all()
     )
+
+    print(f"🔥 TRAINING API DEBUG: Found {len(plans)} plans")
+    for i, plan in enumerate(plans):
+        print(
+            f"🔥 TRAINING API DEBUG: Plan {i}: ID={plan.id}, active={plan.is_active}, updated={plan.updated_at}"
+        )
+        if plan.plan_data and "change_log" in plan.plan_data:
+            print(
+                f"🔥 TRAINING API DEBUG: Plan {i} has {len(plan.plan_data['change_log'])} changes"
+            )
 
     return TrainingPlanListResponse(
         plans=[

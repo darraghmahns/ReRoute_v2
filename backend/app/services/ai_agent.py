@@ -367,6 +367,9 @@ class AIAgent:
         self, db: Session, user: User
     ) -> TrainingPlan:
         """Get the user's training plan using the same logic as the UI (active plan or most recent)."""
+        print(f"🔥 AI AGENT DEBUG: Getting training plan for user {user.id}")
+        logger.info(f"AI Agent: Getting training plan for user {user.id}")
+
         # First try to get active plan
         plan = (
             db.query(TrainingPlan)
@@ -374,21 +377,30 @@ class AIAgent:
             .first()
         )
         if plan:
+            print(f"🔥 AI AGENT DEBUG: Found active plan {plan.id}")
+            logger.info(f"AI Agent: Found active plan {plan.id}")
             return plan
 
         # Fallback to most recent plan if no active plan
         plan = (
             db.query(TrainingPlan)
             .filter(TrainingPlan.user_id == user.id)
-            .order_by(TrainingPlan.created_at.desc())
+            .order_by(TrainingPlan.updated_at.desc())
             .first()
         )
         if plan:
+            print(f"🔥 AI AGENT DEBUG: Found most recent plan {plan.id} (not active)")
+            logger.info(f"AI Agent: Found most recent plan {plan.id} (not active)")
             return plan
 
         # Create new plan only if user has no plans at all
+        print(f"🔥 AI AGENT DEBUG: Creating new plan for user {user.id}")
+        logger.info(f"AI Agent: Creating new plan for user {user.id}")
         plan = TrainingPlan(user_id=user.id, plan_data={}, is_active=True)
         db.add(plan)
+        db.flush()  # Ensure the plan gets an ID
+        print(f"🔥 AI AGENT DEBUG: Created new plan {plan.id}")
+        logger.info(f"AI Agent: Created new plan {plan.id}")
         return plan
 
     def _update_training_plan(
@@ -396,8 +408,18 @@ class AIAgent:
     ) -> Dict[str, Any]:
         """Update a specific field in the user's training plan."""
         try:
+            print(
+                f"🔥 AI AGENT DEBUG: Updating training plan field '{field}' to '{value}' for user {user.id}"
+            )
+            logger.info(
+                f"AI Agent: Updating training plan field '{field}' to '{value}' for user {user.id}"
+            )
+
             # Get or create training plan using UI logic
             plan = self._get_or_create_user_training_plan(db, user)
+            print(
+                f"🔥 AI AGENT DEBUG: Found/created plan {plan.id}, is_active={plan.is_active}"
+            )
 
             # Initialize plan_data if needed
             if plan.plan_data is None:
@@ -444,7 +466,18 @@ class AIAgent:
                 }
             )
 
+            # Flush and commit to ensure changes are immediately visible
+            db.flush()
             db.commit()
+            db.refresh(plan)  # Refresh to get updated data
+
+            print(
+                f"🔥 AI AGENT DEBUG: Successfully updated plan {plan.id}, field '{field}' = '{processed_value}'"
+            )
+            print(f"🔥 AI AGENT DEBUG: Plan data after update: {plan.plan_data}")
+            logger.info(
+                f"AI Agent: Successfully updated plan {plan.id}, field '{field}' = '{processed_value}'"
+            )
 
             return {
                 "action": "update_training_plan",

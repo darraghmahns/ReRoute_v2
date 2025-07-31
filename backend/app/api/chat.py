@@ -913,6 +913,8 @@ Based on the activity data above, please answer the user's question: {last_user_
                 failed_actions = [r for r in tool_results if not r["result"]["success"]]
 
                 action_summary = ""
+                training_plan_updated = False
+
                 if successful_actions:
                     action_summary += "\n\n✅ **Actions Completed:**\n"
                     for action in successful_actions:
@@ -921,6 +923,10 @@ Based on the activity data above, please answer the user's question: {last_user_
                         )
                         action_summary += f"- {result_msg}\n"
 
+                        # Check if training plan was updated
+                        if "training_plan" in action["tool"]:
+                            training_plan_updated = True
+
                 if failed_actions:
                     action_summary += "\n\n❌ **Actions Failed:**\n"
                     for action in failed_actions:
@@ -928,6 +934,10 @@ Based on the activity data above, please answer the user's question: {last_user_
                         action_summary += f"- {action['tool']}: {error_msg}\n"
 
                 ai_content = (ai_content or "") + action_summary
+
+                # Add refresh instruction for training plan updates
+                if training_plan_updated:
+                    ai_content += "\n\n🔄 **Your training plan has been updated! Please refresh the Training tab to see the changes.**"
 
             logging.info(f"Final response length: {len(ai_content)} characters")
             logging.info(f"Response preview: {ai_content[:200]}...")
