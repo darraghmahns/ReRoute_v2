@@ -163,11 +163,22 @@ const Training: React.FC = () => {
       setLoading(true);
       const userPlans = await trainingService.getPlans();
 
-      // Set the most recent active plan as current
-      const activePlan =
-        userPlans.find((plan) => plan.is_active) || userPlans[0];
+      // Set the most recent active plan as current (matching AI agent logic)
+      // First try to get active plan, then fall back to most recent plan
+      let activePlan = userPlans.find((plan) => plan.is_active);
+      if (!activePlan && userPlans.length > 0) {
+        // Since plans are now ordered by is_active desc, updated_at desc, first plan is the right one
+        activePlan = userPlans[0];
+      }
+
       if (activePlan) {
         setCurrentPlan(activePlan);
+        console.log(
+          'Loaded training plan:',
+          activePlan.id,
+          'Active:',
+          activePlan.is_active
+        );
       }
     } catch (error) {
       console.error('Failed to load plans:', error);
@@ -300,6 +311,10 @@ const Training: React.FC = () => {
                     Training Goal: {currentPlan.goal}
                   </p>
                   {/* Show AI agent updates */}
+                  <p className="text-gray-400 text-sm mt-1">
+                    Plan ID: {currentPlan.id} | Last updated:{' '}
+                    {new Date(currentPlan.updated_at).toLocaleString()}
+                  </p>
                   {currentPlan.plan_data?.workout_type && (
                     <p className="text-reroute-primary text-sm mt-1">
                       🤖 AI Update: Workout type set to{' '}
@@ -309,12 +324,24 @@ const Training: React.FC = () => {
                   {currentPlan.plan_data?.change_log &&
                     currentPlan.plan_data.change_log.length > 0 && (
                       <p className="text-reroute-primary text-sm mt-1">
-                        🤖 Last updated by AI:{' '}
+                        🤖 Last AI update:{' '}
                         {new Date(
                           currentPlan.plan_data.change_log[
                             currentPlan.plan_data.change_log.length - 1
                           ].timestamp
-                        ).toLocaleString()}
+                        ).toLocaleString()}{' '}
+                        -{' '}
+                        {
+                          currentPlan.plan_data.change_log[
+                            currentPlan.plan_data.change_log.length - 1
+                          ].field
+                        }
+                        :{' '}
+                        {
+                          currentPlan.plan_data.change_log[
+                            currentPlan.plan_data.change_log.length - 1
+                          ].new_value
+                        }
                       </p>
                     )}
                 </div>
