@@ -29,13 +29,17 @@ target_metadata = Base.metadata
 # Get database URL from environment - same as in app/core/database.py
 from app.core.config import settings
 
-# Handle Cloud SQL unix socket connections
-if settings.POSTGRES_HOST.startswith("/cloudsql/"):
-    # Cloud SQL unix socket connection
-    database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@/{settings.POSTGRES_DB}?host={settings.POSTGRES_HOST}"
+# Use SQLite for local development if configured
+if settings.USE_SQLITE:
+    database_url = settings.DATABASE_URL
 else:
-    # Standard TCP connection
-    database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+    # Handle Cloud SQL unix socket connections
+    if settings.POSTGRES_HOST.startswith("/cloudsql/"):
+        # Cloud SQL unix socket connection
+        database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@/{settings.POSTGRES_DB}?host={settings.POSTGRES_HOST}"
+    else:
+        # Standard TCP connection
+        database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 
 config.set_main_option("sqlalchemy.url", database_url)
 

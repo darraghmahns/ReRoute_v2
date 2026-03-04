@@ -8,18 +8,20 @@ from dateutil import parser as date_parser
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db, uuid_to_db_format
 from app.core.security import get_current_active_user_by_session
 from app.models.chat import ChatMessage as ChatMessageDB
 from app.models.strava import StravaActivity
 from app.models.training import TrainingPlan
 from app.models.user import Profile, User
 from app.schemas.chat import (  # schema
+    ActionResult,
     ChatHistoryResponse,
     ChatMessage,
     ChatRequest,
     ChatResponse,
 )
+from app.services.usage_service import check_and_log_usage
 from app.services.openai_chat import openai_chat_service
 from app.services.ai_agent import ai_agent
 
@@ -749,6 +751,23 @@ def _parse_and_update_training_plan(
     return True, feedback
 
 
+def _extract_action_result(
+    tool_name: str, result: dict
+) -> "ActionResult | None":
+    """Convert a tool result dict into an ActionResult if it contains action metadata."""
+    if not result or "action_type" not in result:
+        return None
+    # Strip action_* keys from data payload
+    data = {k: v for k, v in result.items() if not k.startswith("action_") and k != "message"}
+    return ActionResult(
+        type=result["action_type"],
+        title=result.get("action_title", tool_name),
+        description=result.get("action_description", result.get("message", "")),
+        data=data,
+        nav_url=result.get("action_nav_url", "/"),
+    )
+
+
 # ---- Routes ----------------------------------------------------------------
 
 
@@ -759,11 +778,16 @@ def send_message(
     db: Session = Depends(get_db),
 ):
     """Send chat message with enhanced context and training plan management."""
+    # Check free tier limit: 10 messages per month
+    allowed, msg = check_and_log_usage(db, current_user, "chat_message", limit_free=10)
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
+
     try:
         # Persist incoming user messages
         for msg in chat_request.messages:
             new_msg = ChatMessageDB(
-                user_id=current_user.id,
+                user_id=uuid_to_db_format(current_user.id),
                 role=msg.role,
                 content=msg.content,
             )
@@ -780,7 +804,7 @@ def send_message(
         if updated:
             # Return immediate confirmation without OpenAI call
             assistant_msg_db = ChatMessageDB(
-                user_id=current_user.id,
+                user_id=uuid_to_db_format(current_user.id),
                 role="assistant",
                 content=feedback_msg,
             )
@@ -795,7 +819,7 @@ def send_message(
         history_rows: List[ChatMessageDB] = (
             db.query(ChatMessageDB)
             .filter(
-                ChatMessageDB.user_id == current_user.id,
+                ChatMessageDB.user_id == uuid_to_db_format(current_user.id),
                 ChatMessageDB.created_at >= cutoff_date,
             )
             .order_by(ChatMessageDB.created_at.asc())
@@ -862,6 +886,7 @@ Based on the activity data above, please answer the user's question: {last_user_
                     )
 
         # OpenAI completion with AI Agent function calling
+        action_results = []
         try:
             logging.info(
                 f"Sending {len(messages_for_openai)} messages to OpenAI with AI Agent"
@@ -901,6 +926,13 @@ Based on the activity data above, please answer the user's question: {last_user_
                         tool_results.append(
                             {"tool": tool_call["name"], "result": result}
                         )
+                        # Extract structured action if present
+                        if result.get("success") and result.get("result"):
+                            action = _extract_action_result(
+                                tool_call["name"], result["result"]
+                            )
+                            if action:
+                                action_results.append(action)
                         logging.info(
                             f"Executed tool {tool_call['name']}: {result['success']}"
                         )
@@ -913,7 +945,6 @@ Based on the activity data above, please answer the user's question: {last_user_
                 failed_actions = [r for r in tool_results if not r["result"]["success"]]
 
                 action_summary = ""
-                training_plan_updated = False
 
                 if successful_actions:
                     action_summary += "\n\n✅ **Actions Completed:**\n"
@@ -923,10 +954,6 @@ Based on the activity data above, please answer the user's question: {last_user_
                         )
                         action_summary += f"- {result_msg}\n"
 
-                        # Check if training plan was updated
-                        if "training_plan" in action["tool"]:
-                            training_plan_updated = True
-
                 if failed_actions:
                     action_summary += "\n\n❌ **Actions Failed:**\n"
                     for action in failed_actions:
@@ -935,21 +962,16 @@ Based on the activity data above, please answer the user's question: {last_user_
 
                 ai_content = (ai_content or "") + action_summary
 
-                # Add refresh instruction for training plan updates
-                if training_plan_updated:
-                    ai_content += "\n\n🔄 **Your training plan has been updated! Please refresh the Training tab to see the changes.**"
-
             logging.info(f"Final response length: {len(ai_content)} characters")
-            logging.info(f"Response preview: {ai_content[:200]}...")
 
         except Exception as e:
-            # Fallback response if OpenAI fails
             logging.error(f"OpenAI API error: {e}")
             ai_content = f"I'm sorry, I'm experiencing some technical difficulties right now. Please try again in a moment. Error: {str(e)[:100]}"
+            action_results = []
 
         # Persist assistant response
         assistant_msg_db = ChatMessageDB(
-            user_id=current_user.id,
+            user_id=uuid_to_db_format(current_user.id),
             role="assistant",
             content=ai_content,
         )
@@ -957,7 +979,7 @@ Based on the activity data above, please answer the user's question: {last_user_
         db.commit()
 
         ai_message_schema = ChatMessage(role="assistant", content=ai_content)
-        return ChatResponse(message=ai_message_schema)
+        return ChatResponse(message=ai_message_schema, actions=action_results)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"OpenAI chat failed: {str(e)}")
@@ -1021,7 +1043,7 @@ def get_history(
     messages: List[ChatMessageDB] = (
         db.query(ChatMessageDB)
         .filter(
-            ChatMessageDB.user_id == current_user.id,
+            ChatMessageDB.user_id == uuid_to_db_format(current_user.id),
             ChatMessageDB.created_at >= cutoff_date,
         )
         .order_by(ChatMessageDB.created_at.asc())
@@ -1042,7 +1064,7 @@ def clear_history(
     """Clear chat history for the current user (deletes all records)."""
     deleted = (
         db.query(ChatMessageDB)
-        .filter(ChatMessageDB.user_id == current_user.id)
+        .filter(ChatMessageDB.user_id == uuid_to_db_format(current_user.id))
         .delete()
     )
     db.commit()

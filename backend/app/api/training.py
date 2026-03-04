@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db, uuid_to_db_format
 from app.core.security import get_current_active_user_by_session
 from app.models.training import TrainingPlan
 from app.models.user import User
@@ -14,6 +14,7 @@ from app.schemas.training import (
     TrainingPlanListResponse,
     TrainingPlanResponse,
 )
+from app.services.usage_service import check_and_log_usage
 from app.services.training_plan_generator import training_plan_generator
 
 router = APIRouter(prefix="/training", tags=["training"])
@@ -26,6 +27,22 @@ def generate_plan(
     db: Session = Depends(get_db),
 ):
     """Generate a new training plan using AI"""
+    # Check free tier limit: 1 active training plan at a time
+    if current_user.subscription and current_user.subscription.tier == "free":
+        active_count = (
+            db.query(TrainingPlan)
+            .filter(
+                TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+                TrainingPlan.is_active == True,
+            )
+            .count()
+        )
+        if active_count >= 1:
+            raise HTTPException(
+                status_code=403,
+                detail="Free tier limited to 1 active training plan. Upgrade to Pro for unlimited plans.",
+            )
+
     try:
         # Get user's Strava data for personalization
         strava_data = _get_user_strava_data(current_user, db)
@@ -43,17 +60,16 @@ def generate_plan(
         existing_active_plans = (
             db.query(TrainingPlan)
             .filter(
-                TrainingPlan.user_id == current_user.id, TrainingPlan.is_active == True
+                TrainingPlan.user_id == uuid_to_db_format(current_user.id), TrainingPlan.is_active == True
             )
             .all()
         )
         for plan in existing_active_plans:
             plan.is_active = False
-            print(f"🔥 TRAINING DEBUG: Deactivated old plan {plan.id}")
 
         # Create the training plan in the database
         training_plan = TrainingPlan(
-            user_id=current_user.id,
+            user_id=uuid_to_db_format(current_user.id),
             name=f"{request.goal} Training Plan",
             goal=request.goal,
             weekly_hours=request.weekly_hours,
@@ -61,8 +77,6 @@ def generate_plan(
             plan_data=plan_data,
             is_active=True,  # Explicitly set as active
         )
-
-        print(f"🔥 TRAINING DEBUG: Creating new active plan for user {current_user.id}")
 
         db.add(training_plan)
         db.commit()
@@ -178,7 +192,7 @@ def list_plans(
     # Order by is_active first (active plans first), then by created_at desc
     plans = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.user_id == current_user.id)
+        .filter(TrainingPlan.user_id == uuid_to_db_format(current_user.id))
         .order_by(TrainingPlan.is_active.desc(), TrainingPlan.updated_at.desc())
         .all()
     )
@@ -221,7 +235,7 @@ def get_plan(
     """Get a specific training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == current_user.id)
+        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
         .first()
     )
 
@@ -252,7 +266,7 @@ def get_week_plan(
     """Get a specific week from a training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == current_user.id)
+        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
         .first()
     )
 
@@ -300,7 +314,7 @@ def mark_workout_complete(
     """Mark a workout as completed or not completed"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == current_user.id)
+        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
         .first()
     )
 
@@ -346,7 +360,7 @@ def delete_plan(
     """Delete a training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == current_user.id)
+        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
         .first()
     )
 

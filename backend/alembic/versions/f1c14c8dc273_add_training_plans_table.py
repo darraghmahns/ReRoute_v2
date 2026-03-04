@@ -15,7 +15,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "f1c14c8dc273"
-down_revision: Union[str, None] = "bfccd9020c92"
+down_revision: Union[str, None] = "add_password_reset_tokens"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
