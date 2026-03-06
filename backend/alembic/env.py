@@ -27,19 +27,19 @@ target_metadata = Base.metadata
 # ... etc.
 
 # Get database URL from environment - same as in app/core/database.py
+import os
 from app.core.config import settings
 
-# Use SQLite for local development if configured
-if settings.USE_SQLITE:
+# Prefer DATABASE_URL env var (set directly by Supabase/Railway)
+if os.getenv("DATABASE_URL"):
+    database_url = os.getenv("DATABASE_URL")
+elif settings.USE_SQLITE:
     database_url = settings.DATABASE_URL
 else:
-    # Handle Cloud SQL unix socket connections
-    if settings.POSTGRES_HOST.startswith("/cloudsql/"):
-        # Cloud SQL unix socket connection
-        database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@/{settings.POSTGRES_DB}?host={settings.POSTGRES_HOST}"
-    else:
-        # Standard TCP connection
-        database_url = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+    database_url = (
+        f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+    )
 
 config.set_main_option("sqlalchemy.url", database_url)
 

@@ -43,8 +43,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "reroute_db"
     POSTGRES_USER: str = "reroute_user"
     POSTGRES_PASSWORD: str = "reroute_pass"
-    # For Cloud Run, use Cloud SQL connection name; for local dev, use localhost
-    POSTGRES_HOST: str = "/cloudsql/reroute-training:us-central1:reroute-db"
+    POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
 
     # Redis Configuration
