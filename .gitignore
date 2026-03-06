@@ -65,3 +65,13 @@ coverage.xml
 # Test output
 *.pytest_cache/
 backend/tests/.pytest_cache/ 
+# GraphHopper local map data
+graphhopper-data/
+
+# UV lock file and virtual env
+backend/.venv/
+backend/uv.lock
+
+# Root-level node package files
+package.json
+package-lock.json

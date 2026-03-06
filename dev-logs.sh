@@ -13,7 +13,7 @@ fi
 show_logs() {
     echo "=== Backend Logs ==="
     cd backend
-    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --log-level debug &
+    source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --log-level debug &
     BACKEND_PID=$!
     cd ..
     

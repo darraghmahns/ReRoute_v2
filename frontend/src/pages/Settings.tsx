@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getCurrentUserWithProfile } from '../services/auth';
 import StravaConnection from '../components/StravaConnection';
@@ -10,10 +11,11 @@ import {
   CardTitle,
 } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { User, Shield, Bell, Palette, Database } from 'lucide-react';
+import { User, Shield, Palette } from 'lucide-react';
 import type { Profile } from '../types';
 
 const Settings: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ const Settings: React.FC = () => {
                   {user?.full_name || 'Not set'}
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
                 Edit Profile
               </Button>
             </CardContent>
@@ -110,19 +112,6 @@ const Settings: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">
-                    Two-Factor Authentication
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Add an extra layer of security
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Enable
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
                   <p className="text-sm font-medium">Change Password</p>
                   <p className="text-xs text-gray-400">Update your password</p>
                 </div>
@@ -132,40 +121,6 @@ const Settings: React.FC = () => {
                   onClick={() => setShowChangePassword(true)}
                 >
                   Change
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Email Notifications</p>
-                  <p className="text-xs text-gray-400">
-                    Receive updates via email
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Push Notifications</p>
-                  <p className="text-xs text-gray-400">
-                    Get alerts on your device
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
                 </Button>
               </div>
             </CardContent>
@@ -187,54 +142,7 @@ const Settings: React.FC = () => {
                     Choose your preferred theme
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Dark
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Units</p>
-                  <p className="text-xs text-gray-400">Metric or Imperial</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Metric
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Data Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Data Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Export Data</p>
-                  <p className="text-xs text-gray-400">Download your data</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Export
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Delete Account</p>
-                  <p className="text-xs text-gray-400">
-                    Permanently delete your account
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Delete
-                </Button>
+                <span className="text-sm text-gray-300">Dark</span>
               </div>
             </CardContent>
           </Card>

@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, uuid_to_db_format
 from app.models.user import User, UserSession
 
 # Password hashing
@@ -88,16 +88,19 @@ def create_session_token() -> str:
 
 
 def create_user_session(
-    db: Session, user_id: str, user_agent: str = None, ip_address: str = None
+    db: Session, user_id, user_agent: str = None, ip_address: str = None
 ) -> UserSession:
     """Create a new user session"""
     session_token = create_session_token()
     expires_at = datetime.utcnow() + timedelta(hours=settings.SESSION_EXPIRE_HOURS)
+    
+    # Convert user_id to appropriate format for database
+    db_user_id = uuid_to_db_format(user_id)
 
     # Cleanup old sessions for this user (keep only last 5 active sessions)
     old_sessions = (
         db.query(UserSession)
-        .filter(UserSession.user_id == user_id, UserSession.is_active == True)
+        .filter(UserSession.user_id == db_user_id, UserSession.is_active == True)
         .order_by(UserSession.created_at.desc())
         .offset(4)
         .all()
@@ -108,7 +111,7 @@ def create_user_session(
 
     # Create new session
     new_session = UserSession(
-        user_id=user_id,
+        user_id=db_user_id,
         session_token=session_token,
         expires_at=expires_at,
         user_agent=user_agent,
@@ -195,7 +198,7 @@ async def get_current_user_by_session(
             detail="Invalid or expired session",
         )
 
-    user = db.query(User).filter(User.id == session.user_id).first()
+    user = db.query(User).filter(User.id == uuid_to_db_format(session.user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"

@@ -13,6 +13,8 @@ import {
   Activity,
   Zap as ZapIcon,
   RefreshCw,
+  Loader2,
+  Map,
 } from 'lucide-react';
 import {
   Card,
@@ -22,6 +24,10 @@ import {
 } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { trainingService } from '../services/training';
+import {
+  generateWorkoutRoute,
+  type WorkoutType,
+} from '../services/routes';
 import type { TrainingPlan, Workout, TrainingWeek } from '../types';
 
 interface WorkoutCardProps {
@@ -145,6 +151,65 @@ const Training: React.FC = () => {
     fitness_level: 'intermediate',
   });
 
+  // Workout route generation state
+  const [isGeneratingRoute, setIsGeneratingRoute] = useState(false);
+  const [routeGenerationError, setRouteGenerationError] = useState<string | null>(null);
+  const [generatedRouteSuccess, setGeneratedRouteSuccess] = useState(false);
+
+  // Reset route generation state whenever the selected workout changes
+  useEffect(() => {
+    setIsGeneratingRoute(false);
+    setRouteGenerationError(null);
+    setGeneratedRouteSuccess(false);
+  }, [selectedWorkout?.id]);
+
+  const handleGenerateWorkoutRoute = async (workout: Workout) => {
+    if (workout.workout_type.toLowerCase() === 'rest') {
+      setRouteGenerationError('Rest days cannot be routed — enjoy your recovery!');
+      return;
+    }
+
+    setIsGeneratingRoute(true);
+    setRouteGenerationError(null);
+    setGeneratedRouteSuccess(false);
+
+    // 1. Get user's location via browser geolocation
+    let lat: number;
+    let lng: number;
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
+      );
+      lat = position.coords.latitude;
+      lng = position.coords.longitude;
+    } catch {
+      setRouteGenerationError(
+        'Location access is required to generate a route. Please enable location in your browser.'
+      );
+      setIsGeneratingRoute(false);
+      return;
+    }
+
+    // 2. Call the API
+    try {
+      await generateWorkoutRoute({
+        workout_type: workout.workout_type.toLowerCase() as WorkoutType,
+        duration_minutes: workout.duration_minutes,
+        start_lat: lat,
+        start_lng: lng,
+        profile: 'bike',
+        difficulty: 'moderate',
+      });
+      setGeneratedRouteSuccess(true);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.detail ?? err?.message ?? 'Failed to generate route';
+      setRouteGenerationError(msg);
+    } finally {
+      setIsGeneratingRoute(false);
+    }
+  };
+
   useEffect(() => {
     loadPlans();
 
@@ -163,6 +228,9 @@ const Training: React.FC = () => {
       setLoading(true);
       const userPlans = await trainingService.getPlans();
 
+      console.log('Training Debug: Loaded plans from API:', userPlans);
+      console.log('Training Debug: Plans length:', userPlans.length);
+      
       // Set the most recent active plan as current (matching AI agent logic)
       // First try to get active plan, then fall back to most recent plan
       let activePlan = userPlans.find((plan) => plan.is_active);
@@ -172,6 +240,14 @@ const Training: React.FC = () => {
       }
 
       if (activePlan) {
+        console.log('Training Debug: Setting active plan:', {
+          id: activePlan.id,
+          isActive: activePlan.is_active,
+          planData: activePlan.plan_data,
+          hasWeeks: !!activePlan.plan_data?.weeks,
+          weeksLength: activePlan.plan_data?.weeks?.length,
+          firstWeek: activePlan.plan_data?.weeks?.[0]
+        });
         setCurrentPlan(activePlan);
         console.log(
           'Loaded training plan:',
@@ -179,6 +255,8 @@ const Training: React.FC = () => {
           'Active:',
           activePlan.is_active
         );
+      } else {
+        console.log('Training Debug: No active plan found');
       }
     } catch (error) {
       console.error('Failed to load plans:', error);
@@ -206,7 +284,7 @@ const Training: React.FC = () => {
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
-    if (!currentPlan) return;
+    if (!currentPlan || !currentPlan.plan_data || !currentPlan.plan_data.weeks) return;
 
     const totalWeeks = currentPlan.plan_data.weeks.length;
 
@@ -218,7 +296,15 @@ const Training: React.FC = () => {
   };
 
   const getCurrentWeek = (): TrainingWeek | null => {
-    if (!currentPlan || !currentPlan.plan_data.weeks[currentWeekIndex]) {
+    if (!currentPlan || !currentPlan.plan_data || !currentPlan.plan_data.weeks || !currentPlan.plan_data.weeks[currentWeekIndex]) {
+      console.log('Training Debug: getCurrentWeek returning null', {
+        hasPlan: !!currentPlan,
+        hasPlanData: !!currentPlan?.plan_data,
+        hasWeeks: !!currentPlan?.plan_data?.weeks,
+        currentWeekIndex,
+        weeksLength: currentPlan?.plan_data?.weeks?.length,
+        currentWeek: currentPlan?.plan_data?.weeks?.[currentWeekIndex]
+      });
       return null;
     }
     return currentPlan.plan_data.weeks[currentWeekIndex];
@@ -226,11 +312,19 @@ const Training: React.FC = () => {
 
   const getTotalTrainingTime = (): number => {
     const week = getCurrentWeek();
-    if (!week) return 0;
+    if (!week || !week.workouts) {
+      console.log('Training Debug: getTotalTrainingTime returning 0', { week });
+      return 0;
+    }
 
-    return Object.values(week.workouts).reduce((total, workout) => {
-      return total + workout.duration_minutes;
-    }, 0);
+    try {
+      return Object.values(week.workouts).reduce((total, workout) => {
+        return total + (workout?.duration_minutes || 0);
+      }, 0);
+    } catch (error) {
+      console.log('Training Debug: Error calculating total training time', error, week);
+      return 0;
+    }
   };
 
   const formatDate = (dateString: string): string => {
@@ -432,6 +526,9 @@ const Training: React.FC = () => {
             <Button
               onClick={() => navigateWeek('next')}
               disabled={
+                !currentPlan || 
+                !currentPlan.plan_data || 
+                !currentPlan.plan_data.weeks ||
                 currentWeekIndex >= currentPlan.plan_data.weeks.length - 1
               }
               variant="outline"
@@ -445,16 +542,22 @@ const Training: React.FC = () => {
           </div>
 
           {/* Weekly Calendar */}
-          {currentWeek && (
+          {currentWeek && currentWeek.workouts && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 sm:gap-4">
-              {Object.entries(currentWeek.workouts).map(([day, workout]) => (
-                <WorkoutCard
-                  key={workout.id}
-                  workout={workout}
-                  day={day}
-                  onClick={() => setSelectedWorkout(workout)}
-                />
-              ))}
+              {Object.entries(currentWeek.workouts).map(([day, workout]) => {
+                if (!workout) {
+                  console.log('Training Debug: No workout for day', day);
+                  return null;
+                }
+                return (
+                  <WorkoutCard
+                    key={workout.id || `${day}-${Math.random()}`}
+                    workout={workout}
+                    day={day}
+                    onClick={() => setSelectedWorkout(workout)}
+                  />
+                );
+              })}
             </div>
           )}
 
@@ -516,7 +619,7 @@ const Training: React.FC = () => {
                       )}
                   </div>
 
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Button
                       onClick={() => {
                         // Mark workout as complete
@@ -551,7 +654,37 @@ const Training: React.FC = () => {
                         </>
                       )}
                     </Button>
+
+                    {selectedWorkout.workout_type.toLowerCase() !== 'rest' && (
+                      <Button
+                        onClick={() => handleGenerateWorkoutRoute(selectedWorkout)}
+                        disabled={isGeneratingRoute}
+                        variant="outline"
+                        className="border-reroute-primary/50 text-reroute-primary hover:bg-reroute-primary/10"
+                      >
+                        {isGeneratingRoute ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating Route…
+                          </>
+                        ) : (
+                          <>
+                            <Map className="w-4 h-4 mr-2" />
+                            Generate Route
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
+
+                  {generatedRouteSuccess && (
+                    <p className="text-sm text-green-400 mt-1">
+                      ✓ Route generated! Switch to the <strong>Routes</strong> tab to view it.
+                    </p>
+                  )}
+                  {routeGenerationError && (
+                    <p className="text-sm text-red-400 mt-1">{routeGenerationError}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

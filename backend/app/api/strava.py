@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, uuid_to_db_format
 from app.core.security import get_current_active_user_by_session
 from app.models.strava import StravaActivity
 from app.models.user import Profile, User
@@ -74,7 +74,7 @@ def get_valid_strava_token(profile: Profile, db: Session) -> Optional[str]:
 @router.get("/auth-url")
 def get_auth_url():
     """Get Strava OAuth URL"""
-    redirect_uri = "https://reroute.training/"
+    redirect_uri = settings.STRAVA_REDIRECT_URI
     logging.info(
         f"Strava config - Client ID: {settings.STRAVA_CLIENT_ID}, Redirect URI: {redirect_uri}"
     )
@@ -306,14 +306,14 @@ def sync_activities(
                     db.query(StravaActivity)
                     .filter(
                         StravaActivity.id == act_id,
-                        StravaActivity.user_id == current_user.id,
+                        StravaActivity.user_id == uuid_to_db_format(current_user.id),
                     )
                     .first()
                 )
                 if not db_act:
                     db_act = StravaActivity(
                         id=act_id,
-                        user_id=current_user.id,
+                        user_id=uuid_to_db_format(current_user.id),
                         name=act.get("name"),
                         summary=act,
                         streams=None,
@@ -449,7 +449,7 @@ def refresh_all_activities(
         # Clear all existing activities for this user
         deleted_count = (
             db.query(StravaActivity)
-            .filter(StravaActivity.user_id == current_user.id)
+            .filter(StravaActivity.user_id == uuid_to_db_format(current_user.id))
             .delete()
         )
         logging.info(
@@ -499,7 +499,7 @@ def refresh_all_activities(
 
                 db_act = StravaActivity(
                     id=act_id,
-                    user_id=current_user.id,
+                    user_id=uuid_to_db_format(current_user.id),
                     name=act.get("name"),
                     summary=act,
                     streams=None,
@@ -667,7 +667,7 @@ def get_activities_db(
     """Get all Strava activities for the user from the database, including streams."""
     acts = (
         db.query(StravaActivity)
-        .filter(StravaActivity.user_id == current_user.id)
+        .filter(StravaActivity.user_id == uuid_to_db_format(current_user.id))
         .order_by(StravaActivity.created_at.desc())
         .all()
     )
@@ -693,7 +693,7 @@ def get_activity_streams(
     act = (
         db.query(StravaActivity)
         .filter(
-            StravaActivity.id == activity_id, StravaActivity.user_id == current_user.id
+            StravaActivity.id == activity_id, StravaActivity.user_id == uuid_to_db_format(current_user.id)
         )
         .first()
     )

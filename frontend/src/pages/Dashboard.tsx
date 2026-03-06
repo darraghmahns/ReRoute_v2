@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Calendar,
-  TrendingUp,
   Target,
   Clock,
   Zap,
@@ -21,6 +20,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { useStrava } from '../hooks/useStrava';
 import { getCurrentUserWithProfile } from '../services/auth';
+import { getStravaAuthUrl } from '../services/strava';
 import MapboxActivityMap from '../components/MapboxActivityMap';
 import {
   startOfWeek,
@@ -107,8 +107,10 @@ const getMonday = (date: Date) => startOfWeek(date, { weekStartsOn: 1 });
 const getSunday = (date: Date) => endOfWeek(date, { weekStartsOn: 1 });
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { activities, loading, error, syncActivities } = useStrava();
   const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaConnecting, setStravaConnecting] = useState(false);
   const [expandedActivityId, setExpandedActivityId] = useState<string | null>(
     null
   );
@@ -128,6 +130,16 @@ const Dashboard: React.FC = () => {
 
     fetchProfile();
   }, []);
+
+  const handleConnectStrava = async () => {
+    setStravaConnecting(true);
+    try {
+      const { auth_url } = await getStravaAuthUrl();
+      window.location.href = auth_url;
+    } catch {
+      setStravaConnecting(false);
+    }
+  };
 
   // Group activities by week
   const weekStart = selectedWeekStart;
@@ -299,8 +311,13 @@ const Dashboard: React.FC = () => {
                     and get personalized insights.
                   </p>
                 </div>
-                <Button size="sm" className="ml-auto">
-                  Connect
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  onClick={handleConnectStrava}
+                  disabled={stravaConnecting}
+                >
+                  {stravaConnecting ? 'Connecting...' : 'Connect'}
                 </Button>
               </div>
             </CardContent>
@@ -488,6 +505,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
+                  onClick={() => navigate('/routes')}
                 >
                   <Route className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="truncate">Generate New Route</span>
@@ -495,24 +513,24 @@ const Dashboard: React.FC = () => {
                 <Button
                   className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
                   variant="outline"
+                  onClick={() => navigate('/training')}
                 >
                   <Target className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="truncate">Create Training Plan</span>
                 </Button>
-                <Button
-                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
-                  variant="outline"
-                >
-                  <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">View Analytics</span>
-                </Button>
-                <Button
-                  className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
-                  variant="outline"
-                >
-                  <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Schedule Workout</span>
-                </Button>
+                {!stravaConnected && (
+                  <Button
+                    className="w-full justify-start text-white text-sm sm:text-base h-10 sm:h-auto"
+                    variant="outline"
+                    onClick={handleConnectStrava}
+                    disabled={stravaConnecting}
+                  >
+                    <Activity className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">
+                      {stravaConnecting ? 'Connecting...' : 'Connect Strava'}
+                    </span>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

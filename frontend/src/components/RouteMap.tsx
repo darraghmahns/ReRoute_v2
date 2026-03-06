@@ -12,6 +12,7 @@ if (MAPBOX_TOKEN) {
 interface RouteMapProps {
   onLocationSelect?: (lat: number, lng: number) => void;
   selectedLocation?: { lat: number; lng: number } | null;
+  selectedWaypoint?: { lat: number; lng: number } | null;
   routeGeometry?: {
     type: 'LineString';
     coordinates: number[][];
@@ -24,6 +25,7 @@ interface RouteMapProps {
 const RouteMap: React.FC<RouteMapProps> = ({
   onLocationSelect,
   selectedLocation,
+  selectedWaypoint,
   routeGeometry,
   height = '14rem',
   interactive = true,
@@ -34,6 +36,7 @@ const RouteMap: React.FC<RouteMapProps> = ({
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const waypointMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const onLocationSelectRef = useRef(onLocationSelect);
 
   useEffect(() => {
@@ -123,6 +126,24 @@ const RouteMap: React.FC<RouteMapProps> = ({
       setMapError('Failed to update map marker.');
     }
   }, [selectedLocation, isMapReady]);
+
+  // Update via-waypoint marker (green pin)
+  useEffect(() => {
+    if (!map.current || !isMapReady) return;
+    try {
+      if (waypointMarkerRef.current) {
+        waypointMarkerRef.current.remove();
+        waypointMarkerRef.current = null;
+      }
+      if (selectedWaypoint) {
+        waypointMarkerRef.current = new mapboxgl.Marker({ color: '#22c55e' })
+          .setLngLat([selectedWaypoint.lng, selectedWaypoint.lat])
+          .addTo(map.current);
+      }
+    } catch {
+      // non-fatal
+    }
+  }, [selectedWaypoint, isMapReady]);
 
   // Update route geometry
   useEffect(() => {

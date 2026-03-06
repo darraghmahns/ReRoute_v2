@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import SubscriptionSection from './Subscription';
 import SettingsSection from './Settings';
 import {
@@ -41,10 +41,20 @@ interface Stat {
   color: string;
 }
 
+const PATH_TO_SECTION: Record<string, 'profile' | 'subscription' | 'settings'> = {
+  '/profile/subscription': 'subscription',
+  '/profile/settings': 'settings',
+};
+
+const SECTION_TO_PATH = {
+  profile: '/profile',
+  subscription: '/profile/subscription',
+  settings: '/profile/settings',
+} as const;
+
 const Profile: React.FC = () => {
-  const [sidebarSection, setSidebarSection] = useState<
-    'profile' | 'subscription' | 'settings'
-  >('profile');
+  const location = useLocation();
+  const sidebarSection = PATH_TO_SECTION[location.pathname] ?? 'profile';
   const [activeTab, setActiveTab] = useState<'overview' | 'stats'>('overview');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activities, setActivities] = useState<StravaActivity[]>([]);
@@ -139,11 +149,7 @@ const Profile: React.FC = () => {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() =>
-                setSidebarSection(
-                  item.id as 'profile' | 'subscription' | 'settings'
-                )
-              }
+              onClick={() => navigate(SECTION_TO_PATH[item.id as keyof typeof SECTION_TO_PATH])}
               className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
                 sidebarSection === item.id
                   ? 'bg-reroute-tab-active text-white shadow'
@@ -166,11 +172,7 @@ const Profile: React.FC = () => {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() =>
-                setSidebarSection(
-                  item.id as 'profile' | 'subscription' | 'settings'
-                )
-              }
+              onClick={() => navigate(SECTION_TO_PATH[item.id as keyof typeof SECTION_TO_PATH])}
               className={`w-full text-left px-3 py-2 rounded transition-colors ${
                 sidebarSection === item.id
                   ? 'bg-reroute-primary text-white'
@@ -238,6 +240,12 @@ const Profile: React.FC = () => {
                         ` • ${profile.fitness_level} fitness level`}
                     </p>
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm text-gray-400">
+                      <span className="flex items-center justify-center sm:justify-start">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {profile?.home_address_label || (
+                          <span className="text-gray-500">No home location set</span>
+                        )}
+                      </span>
                       <span className="flex items-center justify-center sm:justify-start">
                         <Calendar className="w-4 h-4 mr-1" />
                         <span className="hidden sm:inline">Member since </span>
@@ -515,8 +523,15 @@ const Profile: React.FC = () => {
           {user && (
             <EditProfileForm
               user={user}
-              onSave={(updatedUser) => {
+              profile={profile}
+              onSave={async (updatedUser) => {
                 setUser(updatedUser);
+                try {
+                  const updatedProfile = await getProfile();
+                  setProfile(updatedProfile);
+                } catch {
+                  // Silently ignore — user data was saved successfully
+                }
                 setEditOpen(false);
               }}
               onCancel={() => setEditOpen(false)}

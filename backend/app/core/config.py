@@ -2,6 +2,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # Database Configuration - Development SQLite support
+    USE_SQLITE: bool = False
+    DATABASE_URL: str = ""
+    
     # OpenAI Configuration
     OPENAI_API_KEY: str = "changeme"
 
@@ -14,6 +18,7 @@ class Settings(BaseSettings):
     # Stripe Configuration
     STRIPE_API_KEY: str = "changeme"
     STRIPE_WEBHOOK_SECRET: str = "changeme"
+    STRIPE_PRO_PRICE_ID: str = "changeme"
 
     # Mapbox Configuration
     MAPBOX_API_KEY: str = "changeme"
@@ -47,6 +52,12 @@ class Settings(BaseSettings):
 
     # GraphHopper Configuration
     GRAPHHOPPER_BASE_URL: str = "https://reroute-graphhopper-server.onrender.com"
+    # Set to False when using a local GH instance with graph.elevation.provider: void
+    GRAPHHOPPER_ELEVATION_ENABLED: bool = True
+
+    # Overpass API Configuration
+    OVERPASS_URL: str = "https://overpass-api.de/api/interpreter"
+    OVERPASS_TIMEOUT_S: int = 30
 
     # Security Configuration
     SECRET_KEY: str = "your-super-secret-key-change-this-in-production"

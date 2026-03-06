@@ -173,7 +173,9 @@ export const generateAILoopRoute = async (
   distance_km: number,
   profile: 'bike' | 'gravel' | 'mountain' = 'bike',
   route_type: 'road' | 'gravel' | 'mountain' | 'urban' = 'road',
-  num_waypoints: number = 4
+  num_waypoints: number = 4,
+  via_lat?: number,
+  via_lng?: number,
 ): Promise<RouteGenerationResponse> => {
   try {
     const response = await axios.post(
@@ -187,6 +189,9 @@ export const generateAILoopRoute = async (
           profile,
           route_type,
           num_waypoints,
+          ...(via_lat !== undefined && via_lng !== undefined
+            ? { via_lat, via_lng }
+            : {}),
         },
         headers: getAuthHeaders(),
       }
@@ -209,6 +214,96 @@ export const generateAILoopRoute = async (
     );
   }
 };
+
+// ── Contextual Training Router ────────────────────────────────────────────────
+
+export type WorkoutType =
+  | 'threshold'
+  | 'vo2max'
+  | 'endurance'
+  | 'recovery'
+  | 'cross_training';
+
+export type WorkoutDifficulty = 'easy' | 'moderate' | 'hard';
+
+export interface WorkoutRouteParams {
+  workout_type: WorkoutType;
+  duration_minutes: number;
+  start_lat: number;
+  start_lng: number;
+  profile?: 'bike' | 'gravel' | 'mountain';
+  difficulty?: WorkoutDifficulty;
+  target_distance_km?: number;
+}
+
+export interface RaceSimParams {
+  race_name: string;
+  start_lat: number;
+  start_lng: number;
+  target_distance_km?: number;
+  profile?: 'bike' | 'gravel' | 'mountain';
+}
+
+export const generateWorkoutRoute = async (
+  params: WorkoutRouteParams
+): Promise<RouteGenerationResponse> => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/routes/generate-workout`,
+      null,
+      {
+        params,
+        headers: getAuthHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized. Please log in again.');
+      } else if (error.response?.status === 400) {
+        throw new Error(
+          error.response.data?.detail || 'Invalid workout route parameters.'
+        );
+      } else if (error.response?.status === 500) {
+        throw new Error('Workout route generation failed. Please try again.');
+      }
+    }
+    throw new Error('An unexpected error occurred during workout route generation.');
+  }
+};
+
+export const simulateRaceRoute = async (
+  params: RaceSimParams
+): Promise<RouteGenerationResponse> => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/routes/simulate-race`,
+      null,
+      {
+        params,
+        headers: getAuthHeaders(),
+        timeout: 60_000,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized. Please log in again.');
+      } else if (error.response?.status === 400) {
+        throw new Error(
+          error.response.data?.detail || 'Invalid race simulation parameters.'
+        );
+      } else if (error.response?.status === 500) {
+        throw new Error('Race simulation failed. Please try again.');
+      }
+    }
+    throw new Error('An unexpected error occurred during race simulation.');
+  }
+};
+
+// ── Standard routes ───────────────────────────────────────────────────────────
 
 export const getUserRoutes = async (
   skip: number = 0,

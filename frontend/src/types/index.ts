@@ -44,6 +44,9 @@ export interface Profile {
   training_preferences?: Record<string, unknown>;
   current_fitness_assessment?: string;
   profile_completed: boolean;
+  home_lat?: number;
+  home_lng?: number;
+  home_address_label?: string;
   strava_user_id?: string;
   strava_access_token?: string;
   strava_refresh_token?: string;
@@ -241,7 +244,7 @@ export interface SubscriptionStatus {
   email: string;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
-  subscription_tier: 'free' | 'premium' | 'pro';
+  subscription_tier: 'free' | 'pro';
   subscribed: boolean;
   subscription_end?: string;
   created_at: string;
@@ -294,6 +297,9 @@ export interface ProfileFormData {
   time_availability?: Record<string, unknown>;
   training_preferences?: Record<string, unknown>;
   current_fitness_assessment?: string;
+  home_lat?: number;
+  home_lng?: number;
+  home_address_label?: string;
 }
 
 // Component Props Types
@@ -336,13 +342,6 @@ export const SUBSCRIPTION_TIERS = {
     trainingPlans: 1,
     performanceAnalytics: false,
     price: 0,
-  },
-  premium: {
-    chatMessages: 100,
-    routesPerMonth: 25,
-    trainingPlans: 5,
-    performanceAnalytics: true,
-    price: 9.99,
   },
   pro: {
     chatMessages: -1, // unlimited

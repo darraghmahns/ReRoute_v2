@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.terrain import TerrainTarget
+
 
 class RouteWaypointBase(BaseModel):
     lat: float = Field(..., description="Latitude")
@@ -55,6 +57,18 @@ class RouteGenerationParams(BaseModel):
     )
     strava_activity_type: Optional[str] = Field(
         None, description="Bike type for Strava data"
+    )
+    terrain_target: Optional[TerrainTarget] = Field(
+        None,
+        description=(
+            "Terrain constraints for contextual routing. When set, surface integrity "
+            "rules are enforced as hard blocks. When None, legacy routing behaviour applies."
+        ),
+    )
+    start_heading: Optional[float] = Field(
+        None,
+        description="Departure heading in degrees (0=N, 90=E, 180=S, 270=W). "
+                    "Passed to GraphHopper to force initial direction of travel.",
     )
 
 

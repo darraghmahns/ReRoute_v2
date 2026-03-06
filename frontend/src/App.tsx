@@ -37,7 +37,12 @@ const RootHandler: React.FC = () => {
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <div className="min-h-screen flex flex-col bg-reroute-gradient bg-cover">
         <Navigation />
         <main className="container mx-auto px-2 sm:px-4 py-2 sm:py-4 flex-1">
@@ -62,6 +67,9 @@ function App() {
 
               {/* Root route with Strava callback detection */}
               <Route path="/" element={<RootHandler />} />
+              <Route path="/routes" element={<RootHandler />} />
+              <Route path="/training" element={<RootHandler />} />
+              <Route path="/dashboard" element={<RootHandler />} />
               <Route
                 path="/profile"
                 element={
@@ -70,7 +78,22 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              {/* Note: Settings and Subscription are now managed within the Profile page */}
+              <Route
+                path="/profile/subscription"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/settings"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* 404 route */}
               <Route path="*" element={<NotFoundPage />} />

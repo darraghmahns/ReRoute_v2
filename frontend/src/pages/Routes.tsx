@@ -20,12 +20,14 @@ import { Input } from '../components/ui/Input';
 import RouteMap from '../components/RouteMap';
 import {
   generateAILoopRoute,
+  simulateRaceRoute,
   getUserRoutes,
   deleteRoute,
   downloadGPX,
   getRoute,
   type RouteListItem,
   type Route,
+  type RaceSimParams,
 } from '../services/routes';
 import { useAuth } from '../hooks/useAuth';
 
@@ -51,6 +53,11 @@ interface GeneratedRoute {
   };
 }
 
+interface RaceFormData {
+  raceName: string;
+  targetDistanceKm: string;
+}
+
 const bikeTypes = [
   { id: 'bike', label: 'Road Bike', icon: Bike },
   { id: 'gravel', label: 'Gravel', icon: MapIcon },
@@ -64,9 +71,21 @@ const Routes: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedBike, setSelectedBike] = useState<string>('bike');
 
+  // Generation mode: classic loop or race simulation
+  const [generationMode, setGenerationMode] = useState<'loop' | 'race'>('loop');
+  const [raceForm, setRaceForm] = useState<RaceFormData>({
+    raceName: '',
+    targetDistanceKm: '',
+  });
+
   // Route generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Via-waypoint state: user can optionally pin a point the loop must pass through
+  const [waypointLocation, setWaypointLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapClickMode, setMapClickMode] = useState<'start' | 'waypoint'>('start');
+
   const [formData, setFormData] = useState<RouteFormData>({
     name: '',
     distance: '',
@@ -141,13 +160,14 @@ const Routes: React.FC = () => {
     );
 
   const handleLocationSelect = (lat: number, lng: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      startLocation: { lat, lng },
-    }));
+    if (mapClickMode === 'waypoint') {
+      setWaypointLocation({ lat, lng });
+    } else {
+      setFormData((prev) => ({ ...prev, startLocation: { lat, lng } }));
+    }
   };
 
-  const handleGenerateRoute = async () => {
+  const handleGenerateLoop = async () => {
     if (
       !formData.startLocation ||
       !formData.name.trim() ||
@@ -177,7 +197,9 @@ const Routes: React.FC = () => {
         distanceKm,
         formData.profile,
         formData.routeType,
-        4 // Default 4 waypoints
+        4, // Default 4 waypoints
+        waypointLocation?.lat,
+        waypointLocation?.lng,
       );
 
       setPreviewRoute({
@@ -201,6 +223,8 @@ const Routes: React.FC = () => {
         useAIGeneration: true,
       });
       setSelectedBike('bike');
+      setWaypointLocation(null);
+      setMapClickMode('start');
     } catch (error) {
       setGenerationError(
         error instanceof Error ? error.message : 'Failed to generate route'
@@ -208,6 +232,57 @@ const Routes: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerateRace = async () => {
+    if (!formData.startLocation) {
+      setGenerationError('Please select a start location on the map');
+      return;
+    }
+    if (!raceForm.raceName.trim()) {
+      setGenerationError('Please enter a race name');
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationError(null);
+
+    try {
+      const params: RaceSimParams = {
+        race_name: raceForm.raceName.trim(),
+        start_lat: formData.startLocation.lat,
+        start_lng: formData.startLocation.lng,
+        profile: formData.profile,
+      };
+      if (raceForm.targetDistanceKm.trim()) {
+        const dist = parseFloat(raceForm.targetDistanceKm);
+        if (!isNaN(dist) && dist > 0) {
+          params.target_distance_km = dist;
+        }
+      }
+
+      const result = await simulateRaceRoute(params);
+
+      setPreviewRoute({
+        id: result.route.id,
+        name: result.route.name,
+        distance_m: result.route.distance_m,
+        geometry: result.route.geometry,
+      });
+      await loadUserRoutes();
+      setRaceForm({ raceName: '', targetDistanceKm: '' });
+    } catch (error) {
+      setGenerationError(
+        error instanceof Error ? error.message : 'Failed to simulate race route'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerate = () => {
+    if (generationMode === 'loop') return handleGenerateLoop();
+    if (generationMode === 'race') return handleGenerateRace();
   };
 
   const handleDeleteRoute = async (routeId: string) => {
@@ -315,69 +390,185 @@ const Routes: React.FC = () => {
         <Card className="bg-reroute-card rounded-2xl shadow-card p-8">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-bold text-white mb-1">
-              Montana Route Planner
+              Route Planner
             </CardTitle>
             <p className="text-gray-400 text-base">
-              Generate cycling routes using custom GraphHopper routing optimized
-              for Montana
+              Generate cycling routes using AI-powered terrain-aware routing
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-300 text-sm mb-1">
-                  Route Name
-                </label>
-                <Input
-                  className="bg-[#16213a] text-white placeholder-gray-500 border-none"
-                  placeholder="e.g., Helena to Bozeman Challenge"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-300 text-sm mb-1">
-                  Distance (mi) *
-                </label>
-                <Input
-                  className="bg-[#16213a] text-white placeholder-gray-500 border-none"
-                  placeholder="e.g., 40"
-                  type="number"
-                  min="1"
-                  step="0.1"
-                  required
-                  value={formData.distance}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      distance: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+            {/* Mode tab strip */}
+            <div className="flex gap-2">
+              {[
+                { id: 'loop' as const, label: '🔄 Classic Loop' },
+                { id: 'race' as const, label: '🏁 Race Simulation' },
+              ].map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    setGenerationMode(mode.id);
+                    setGenerationError(null);
+                    setPreviewRoute(null);
+                  }}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-colors border-2
+                    ${
+                      generationMode === mode.id
+                        ? 'bg-reroute-tab-active text-reroute-card border-reroute-tab-active shadow'
+                        : 'bg-[#16213a] text-white/80 border-transparent hover:bg-white/10'
+                    }
+                  `}
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
+
+            {/* Classic Loop fields */}
+            {generationMode === 'loop' && (
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-gray-300 text-sm mb-1">
+                    Route Name
+                  </label>
+                  <Input
+                    className="bg-[#16213a] text-white placeholder-gray-500 border-none"
+                    placeholder="e.g., Sunday Loop"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-gray-300 text-sm mb-1">
+                    Distance (mi) *
+                  </label>
+                  <Input
+                    className="bg-[#16213a] text-white placeholder-gray-500 border-none"
+                    placeholder="e.g., 40"
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    required
+                    value={formData.distance}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        distance: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Race Simulation fields */}
+            {generationMode === 'race' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1">
+                    Race Name *
+                  </label>
+                  <Input
+                    className="bg-[#16213a] text-white placeholder-gray-500 border-none"
+                    placeholder='e.g., "Paris-Roubaix", "Tour de France Stage 15"'
+                    value={raceForm.raceName}
+                    onChange={(e) =>
+                      setRaceForm((prev) => ({
+                        ...prev,
+                        raceName: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1">
+                    Target Distance (km) — optional
+                  </label>
+                  <Input
+                    className="bg-[#16213a] text-white placeholder-gray-500 border-none"
+                    placeholder="e.g., 30"
+                    type="number"
+                    min="1"
+                    step="0.1"
+                    value={raceForm.targetDistanceKm}
+                    onChange={(e) =>
+                      setRaceForm((prev) => ({
+                        ...prev,
+                        targetDistanceKm: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  AI researches the race terrain and generates a local route that mimics it
+                </p>
+              </div>
+            )}
             <div>
               <label className="block text-gray-300 text-sm mb-1">
-                Start Location (Montana)
+                Start Location
               </label>
+              {/* Click-mode toggle */}
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setMapClickMode('start')}
+                  className={`flex-1 text-xs py-1.5 px-3 rounded-lg border transition-colors ${
+                    mapClickMode === 'start'
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-[#16213a] border-transparent text-white/60 hover:text-white/80'
+                  }`}
+                >
+                  Set Start
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapClickMode('waypoint')}
+                  className={`flex-1 text-xs py-1.5 px-3 rounded-lg border transition-colors ${
+                    mapClickMode === 'waypoint'
+                      ? 'bg-green-600 border-green-500 text-white'
+                      : 'bg-[#16213a] border-transparent text-white/60 hover:text-white/80'
+                  }`}
+                >
+                  Set Via Waypoint
+                </button>
+              </div>
               <p className="text-xs text-gray-500 mb-2">
-                Click on the map to set starting location
+                {mapClickMode === 'start'
+                  ? 'Click the map to set your start location'
+                  : 'Click the map to set a point the route must pass through (e.g. a trailhead)'}
               </p>
               <div className="rounded-lg overflow-hidden border border-reroute-card mb-2">
                 <RouteMap
                   onLocationSelect={handleLocationSelect}
                   selectedLocation={formData.startLocation}
+                  selectedWaypoint={waypointLocation}
                   routeGeometry={previewRoute?.geometry}
                   height="14rem"
                 />
               </div>
               {formData.startLocation && (
-                <p className="text-xs text-green-400 mb-2">
-                  Selected: {formData.startLocation.lat.toFixed(4)},{' '}
+                <p className="text-xs text-blue-400 mb-1">
+                  Start: {formData.startLocation.lat.toFixed(4)},{' '}
                   {formData.startLocation.lng.toFixed(4)}
                 </p>
+              )}
+              {waypointLocation && (
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-green-400">
+                    Via: {waypointLocation.lat.toFixed(4)},{' '}
+                    {waypointLocation.lng.toFixed(4)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setWaypointLocation(null)}
+                    className="text-xs text-gray-500 hover:text-red-400 ml-2"
+                  >
+                    ✕ clear
+                  </button>
+                </div>
               )}
               {previewRoute && (
                 <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-2">
@@ -491,26 +682,34 @@ const Routes: React.FC = () => {
                 <span className="text-red-400 text-sm">{generationError}</span>
               </div>
             )}
-            <div className="flex gap-2 mt-4">
+            <div className="flex flex-col gap-2 mt-4">
               <Button
                 className="flex-1 bg-reroute-primary text-white font-semibold"
-                onClick={handleGenerateRoute}
+                onClick={handleGenerate}
                 disabled={
                   isGenerating ||
-                  !formData.name.trim() ||
                   !formData.startLocation ||
-                  !formData.distance.trim()
+                  (generationMode === 'loop' &&
+                    (!formData.name.trim() || !formData.distance.trim())) ||
+                  (generationMode === 'race' && !raceForm.raceName.trim())
                 }
               >
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    {generationMode === 'race' ? 'Simulating Race...' : 'Generating...'}
                   </>
+                ) : generationMode === 'race' ? (
+                  'Simulate Race Route'
                 ) : (
                   'Generate Route'
                 )}
               </Button>
+              {generationMode === 'race' && (
+                <p className="text-xs text-gray-500 text-center">
+                  Race simulation uses AI — may take 10–20 seconds
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

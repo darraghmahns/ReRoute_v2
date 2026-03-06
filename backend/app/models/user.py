@@ -4,25 +4,24 @@ from datetime import datetime
 from sqlalchemy import (
     DECIMAL,
     JSON,
-    UUID,
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.core.database import Base, get_uuid_column, generate_uuid
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
     email = Column(String(255), unique=True, nullable=False)
     hashed_password = Column(String(1024), nullable=False)
     full_name = Column(String(255))
@@ -40,7 +39,7 @@ class User(Base):
 class Profile(Base):
     __tablename__ = "profiles"
 
-    id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
+    id = Column(get_uuid_column(), ForeignKey("users.id"), primary_key=True)
     age = Column(Integer)
     gender = Column(String(50))
     weight_lbs = Column(DECIMAL(5, 2))
@@ -60,6 +59,11 @@ class Profile(Base):
     current_fitness_assessment = Column(Text)
     profile_completed = Column(Boolean, default=False)
 
+    # Home location fields
+    home_lat = Column(Float, nullable=True)
+    home_lng = Column(Float, nullable=True)
+    home_address_label = Column(String(500), nullable=True)
+
     # Strava integration fields
     strava_user_id = Column(String(255))
     strava_access_token = Column(Text)
@@ -76,8 +80,8 @@ class Profile(Base):
 class UserSession(Base):
     __tablename__ = "user_sessions"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
+    user_id = Column(get_uuid_column(), ForeignKey("users.id"), nullable=False)
     session_token = Column(String(255), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False)
     last_activity = Column(DateTime, default=datetime.utcnow)
@@ -93,8 +97,8 @@ class UserSession(Base):
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
+    user_id = Column(get_uuid_column(), ForeignKey("users.id"), nullable=False)
     token = Column(String(255), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)

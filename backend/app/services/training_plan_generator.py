@@ -139,12 +139,12 @@ Requirements:
 - Personalize based on the user's Strava data when available
 
 Workout Types:
-- RECOVERY: Easy rides, <65% FTP
-- ENDURANCE: Steady rides, 65-85% FTP  
-- THRESHOLD: Tempo work, 91-105% FTP
-- VO2MAX: High intensity intervals, 106-120% FTP
-- CROSS_TRAINING: Strength, yoga, etc.
-- REST: Complete rest days
+- recovery: Easy rides, <65% FTP
+- endurance: Steady rides, 65-85% FTP
+- threshold: Tempo work, 91-105% FTP
+- vo2max: High intensity intervals, 106-120% FTP
+- cross_training: Strength, yoga, etc.
+- rest: Complete rest days
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -157,7 +157,7 @@ Return ONLY a valid JSON object with this exact structure:
           "title": "Workout Title",
           "description": "Brief description",
           "duration_minutes": 60,
-          "workout_type": "RECOVERY|ENDURANCE|THRESHOLD|VO2MAX|CROSS_TRAINING|REST",
+          "workout_type": "recovery|endurance|threshold|vo2max|cross_training|rest",
           "ftp_percentage_min": 60,
           "ftp_percentage_max": 70,
           "details": "Detailed workout description"
@@ -232,7 +232,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Recovery Ride",
                     "description": "Easy ride to start the week",
                     "duration_minutes": daily_minutes,
-                    "workout_type": "RECOVERY",
+                    "workout_type": "recovery",
                     "ftp_percentage_min": 50,
                     "ftp_percentage_max": 65,
                     "details": "Easy ride in Zone 1, <65% FTP to promote recovery.",
@@ -243,7 +243,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Endurance Ride",
                     "description": "Steady pace to build aerobic capacity",
                     "duration_minutes": daily_minutes,
-                    "workout_type": "ENDURANCE",
+                    "workout_type": "endurance",
                     "ftp_percentage_min": 65,
                     "ftp_percentage_max": 85,
                     "details": "Steady ride in Zone 2, 65-75% FTP to build aerobic capacity.",
@@ -254,7 +254,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Threshold Intervals",
                     "description": "Tempo work to improve threshold",
                     "duration_minutes": daily_minutes,
-                    "workout_type": "THRESHOLD",
+                    "workout_type": "threshold",
                     "ftp_percentage_min": 91,
                     "ftp_percentage_max": 105,
                     "details": "Warm-up followed by 4 x 8 min intervals in Zone 4, 91-105% FTP with 4 min recovery between.",
@@ -265,7 +265,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Recovery Ride",
                     "description": "Easy recovery ride",
                     "duration_minutes": daily_minutes // 2,
-                    "workout_type": "RECOVERY",
+                    "workout_type": "recovery",
                     "ftp_percentage_min": 50,
                     "ftp_percentage_max": 65,
                     "details": "Easy recovery ride to promote recovery.",
@@ -276,7 +276,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Endurance Ride",
                     "description": "Steady endurance work",
                     "duration_minutes": daily_minutes,
-                    "workout_type": "ENDURANCE",
+                    "workout_type": "endurance",
                     "ftp_percentage_min": 65,
                     "ftp_percentage_max": 85,
                     "details": "Steady ride in Zone 2, 65-75% FTP to build aerobic capacity.",
@@ -287,7 +287,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "VO2max Intervals",
                     "description": "High intensity intervals",
                     "duration_minutes": daily_minutes,
-                    "workout_type": "VO2MAX",
+                    "workout_type": "vo2max",
                     "ftp_percentage_min": 106,
                     "ftp_percentage_max": 120,
                     "details": "Warm-up followed by 5 x 3 min intervals in Zone 5, 106-120% FTP with 3 min recovery between.",
@@ -298,7 +298,7 @@ Ensure the JSON is valid and complete. Start the first week from the current dat
                     "title": "Rest Day",
                     "description": "Complete rest",
                     "duration_minutes": 0,
-                    "workout_type": "REST",
+                    "workout_type": "rest",
                     "ftp_percentage_min": None,
                     "ftp_percentage_max": None,
                     "details": "Complete rest to allow for recovery and adaptation.",

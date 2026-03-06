@@ -11,10 +11,74 @@ interface ChatMessage {
   content: string;
 }
 
+interface ActionResult {
+  type: string;
+  title: string;
+  description: string;
+  data: Record<string, unknown>;
+  nav_url: string;
+}
+
+const ACTION_CONFIG: Record<string, { color: string; border: string; icon: string }> = {
+  route_generated:            { color: 'text-green-400',  border: 'border-green-500/30 bg-green-500/10',   icon: '🗺️' },
+  route_deleted:              { color: 'text-red-400',    border: 'border-red-500/30 bg-red-500/10',       icon: '🗑️' },
+  route_renamed:              { color: 'text-green-400',  border: 'border-green-500/30 bg-green-500/10',   icon: '✏️' },
+  routes_listed:              { color: 'text-green-400',  border: 'border-green-500/30 bg-green-500/10',   icon: '📋' },
+  workout_updated:            { color: 'text-blue-400',   border: 'border-blue-500/30 bg-blue-500/10',     icon: '🏋️' },
+  training_plan_updated:      { color: 'text-blue-400',   border: 'border-blue-500/30 bg-blue-500/10',     icon: '📅' },
+  training_plan_generated:    { color: 'text-blue-400',   border: 'border-blue-500/30 bg-blue-500/10',     icon: '✨' },
+  profile_updated:            { color: 'text-purple-400', border: 'border-purple-500/30 bg-purple-500/10', icon: '👤' },
+  profile_viewed:             { color: 'text-purple-400', border: 'border-purple-500/30 bg-purple-500/10', icon: '👤' },
+  strava_activities_fetched:  { color: 'text-orange-400', border: 'border-orange-500/30 bg-orange-500/10', icon: '🚴' },
+  strava_synced:              { color: 'text-orange-400', border: 'border-orange-500/30 bg-orange-500/10', icon: '🔄' },
+};
+
+const NAV_LABEL: Record<string, string> = {
+  '/routes':    'View Routes',
+  '/training':  'View Training',
+  '/profile':   'View Profile',
+  '/dashboard': 'View Dashboard',
+};
+
+interface ActionCardProps {
+  action: ActionResult;
+  onNavigate: (url: string) => void;
+}
+
+const ActionCard: React.FC<ActionCardProps> = ({ action, onNavigate }) => {
+  const cfg = ACTION_CONFIG[action.type] ?? {
+    color: 'text-gray-400',
+    border: 'border-white/20 bg-white/5',
+    icon: '⚡',
+  };
+  const btnLabel = NAV_LABEL[action.nav_url] ?? 'View';
+
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border ${cfg.border} mt-2`}
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="text-base flex-shrink-0">{cfg.icon}</span>
+        <div className="min-w-0">
+          <p className={`text-sm font-semibold ${cfg.color} truncate`}>{action.title}</p>
+          <p className="text-xs text-gray-400 truncate">{action.description}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => onNavigate(action.nav_url)}
+        className={`flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border ${cfg.border} ${cfg.color} hover:opacity-80 transition-opacity whitespace-nowrap`}
+      >
+        {btnLabel}
+      </button>
+    </div>
+  );
+};
+
 const Chat: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageActions, setMessageActions] = useState<Map<number, ActionResult[]>>(new Map());
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -85,7 +149,7 @@ const Chat: React.FC = () => {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
+              className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} mb-4`}
             >
               <div
                 className={`px-6 py-3 rounded-2xl max-w-[85%] shadow-lg ${
@@ -154,6 +218,17 @@ const Chat: React.FC = () => {
                   <div className="leading-relaxed">{msg.content}</div>
                 )}
               </div>
+              {msg.role === 'assistant' && messageActions.get(i) && (
+                <div className="mr-12 mt-1 space-y-1.5 w-full max-w-[85%]">
+                  {(messageActions.get(i) ?? []).map((action, j) => (
+                    <ActionCard
+                      key={j}
+                      action={action}
+                      onNavigate={(url) => navigate(url)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {sending && (
@@ -203,7 +278,17 @@ const Chat: React.FC = () => {
                 });
                 const data = await res.json();
                 if (data.message) {
-                  setMessages((prev) => [...prev, data.message]);
+                  setMessages((prev) => {
+                    const newMessages = [...prev, data.message];
+                    if (data.actions && data.actions.length > 0) {
+                      setMessageActions((prevActions) => {
+                        const updated = new Map(prevActions);
+                        updated.set(newMessages.length - 1, data.actions);
+                        return updated;
+                      });
+                    }
+                    return newMessages;
+                  });
                 }
               } catch {
                 setMessages((prev) => [

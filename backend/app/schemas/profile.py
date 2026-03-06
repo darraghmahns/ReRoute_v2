@@ -23,6 +23,9 @@ class ProfileBase(BaseModel):
     time_availability: Optional[Dict[str, Any]] = None
     training_preferences: Optional[Dict[str, Any]] = None
     current_fitness_assessment: Optional[str] = None
+    home_lat: Optional[float] = Field(None, ge=-90, le=90)
+    home_lng: Optional[float] = Field(None, ge=-180, le=180)
+    home_address_label: Optional[str] = Field(None, max_length=500)
 
 
 class ProfileCreate(ProfileBase):

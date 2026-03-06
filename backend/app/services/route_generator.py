@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.route import Route
 from app.schemas.route import RouteGenerationParams
+from app.schemas.terrain import TerrainTarget
 from app.services.graphhopper import graphhopper_service
 from app.services.strava_route_integration import strava_route_integration
 
@@ -73,8 +74,15 @@ class RouteGenerationService:
         num_waypoints: int,
         user_id: str,
         db: Session,
+        terrain_target: Optional[TerrainTarget] = None,
+        via_lat: Optional[float] = None,
+        via_lng: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Generate AI-powered loop route"""
+        """Generate AI-powered loop route with optional terrain constraints.
+
+        When via_lat/via_lng are provided the route is forced through that point
+        instead of using automated waypoint selection.
+        """
         try:
             # Generate using GraphHopper AI loop
             gh_response = self.graphhopper.generate_ai_loop_route(
@@ -84,6 +92,9 @@ class RouteGenerationService:
                 profile=profile,
                 route_type=route_type,
                 num_waypoints=num_waypoints,
+                terrain_target=terrain_target,
+                via_lat=via_lat,
+                via_lng=via_lng,
             )
 
             if "paths" not in gh_response or not gh_response["paths"]:

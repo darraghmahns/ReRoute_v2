@@ -1,0 +1,16 @@
+services:
+  graphhopper:
+    build:
+      context: ../reroute-graphhopper-server
+      dockerfile: Dockerfile.local
+    ports:
+      - "8989:8989"
+    volumes:
+      # OSM file + graph cache output (persisted between restarts)
+      - ./graphhopper-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8989/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 300s

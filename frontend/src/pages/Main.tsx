@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import RoutesPage from './Routes';
 import TrainingPage from './Training';
@@ -14,8 +15,27 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]['id'];
 
+const PATH_TO_TAB: Record<string, TabId> = {
+  '/training': 'training',
+  '/routes': 'routes',
+  '/dashboard': 'performance',
+};
+
+const TAB_TO_PATH: Record<TabId, string> = {
+  'ai': '/',
+  'training': '/training',
+  'routes': '/routes',
+  'performance': '/dashboard',
+};
+
 const Main: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabId>('ai');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab: TabId = PATH_TO_TAB[location.pathname] ?? 'ai';
+
+  const handleTabChange = (id: TabId) => {
+    navigate(TAB_TO_PATH[id], { replace: true });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -40,7 +60,7 @@ const Main: React.FC = () => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base whitespace-nowrap min-w-0 flex-shrink-0
                 ${
                   activeTab === tab.id

@@ -13,17 +13,16 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.core.database import Base, get_uuid_column, generate_uuid
 
 
 class Route(Base):
     __tablename__ = "routes"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
+    user_id = Column(get_uuid_column(), ForeignKey("users.id"), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text)
 
@@ -70,9 +69,9 @@ class Route(Base):
 class RouteWaypoint(Base):
     __tablename__ = "route_waypoints"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
     route_id = Column(
-        PostgresUUID(as_uuid=True), ForeignKey("routes.id"), nullable=False
+        get_uuid_column(), ForeignKey("routes.id"), nullable=False
     )
     sequence = Column(Integer, nullable=False)  # Order of waypoint in route
     lat = Column(Float, nullable=False)
@@ -88,10 +87,10 @@ class RouteWaypoint(Base):
 class SavedRoute(Base):
     __tablename__ = "saved_routes"
 
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(get_uuid_column(), primary_key=True, default=generate_uuid)
+    user_id = Column(get_uuid_column(), ForeignKey("users.id"), nullable=False)
     route_id = Column(
-        PostgresUUID(as_uuid=True), ForeignKey("routes.id"), nullable=False
+        get_uuid_column(), ForeignKey("routes.id"), nullable=False
     )
     saved_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text)
