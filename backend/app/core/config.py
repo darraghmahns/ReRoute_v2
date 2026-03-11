@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     # Database Configuration - Development SQLite support
     USE_SQLITE: bool = False
     DATABASE_URL: str = ""
-    
+
     # OpenAI Configuration
     OPENAI_API_KEY: str = "changeme"
 
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # GraphHopper Configuration
-    GRAPHHOPPER_BASE_URL: str = "https://reroute-graphhopper-server.onrender.com"
+    GRAPHHOPPER_BASE_URL: str = "http://localhost:8989"
     # Set to False when using a local GH instance with graph.elevation.provider: void
     GRAPHHOPPER_ELEVATION_ENABLED: bool = True
 
@@ -64,6 +64,38 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     SESSION_EXPIRE_HOURS: int = 1
     SESSION_REFRESH_THRESHOLD_MINUTES: int = 15
+
+    def validate_production_config(self) -> None:
+        """Raise RuntimeError if critical secrets are still set to defaults."""
+        errors: list[str] = []
+
+        if self.SECRET_KEY == "changeme":
+            errors.append("SECRET_KEY must not be 'changeme'")
+        if len(self.SECRET_KEY) < 32:
+            errors.append("SECRET_KEY must be at least 32 characters")
+
+        if self.OPENAI_API_KEY == "changeme":
+            errors.append("OPENAI_API_KEY must not be 'changeme'")
+
+        if self.STRIPE_API_KEY == "changeme":
+            errors.append("STRIPE_API_KEY must not be 'changeme'")
+
+        if self.STRIPE_WEBHOOK_SECRET == "changeme":
+            errors.append("STRIPE_WEBHOOK_SECRET must not be 'changeme'")
+
+        if not self.DATABASE_URL:
+            errors.append("DATABASE_URL must not be empty")
+
+        if self.GRAPHHOPPER_BASE_URL.startswith("http://localhost"):
+            errors.append(
+                "GRAPHHOPPER_BASE_URL must not point to localhost in production"
+            )
+
+        if errors:
+            raise RuntimeError(
+                "Production config validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
 
     class Config:
         env_file = ".env"

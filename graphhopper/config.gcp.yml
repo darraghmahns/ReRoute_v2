@@ -1,0 +1,80 @@
+# GraphHopper Configuration for GCP Cloud Run
+# Optimized for Montana Cycling Routes with Cloud Run constraints
+
+graphhopper:
+  graph.vehicles: bike
+  graph.location: graph-cache
+  graph.elevation.provider: srtm
+  graph.elevation.cache_dir: elevation-cache
+  
+  # Enhanced data sources for better routing
+  datareader.file: montana-latest.osm.pbf
+  
+  # OSM import optimizations
+  import.osm.ignored_highways: motorway,motorway_link,trunk,trunk_link
+  
+  # Improved graph preprocessing
+  graph.encoded_values: road_class,road_class_link,road_environment,max_speed,road_access,surface,smoothness,bike_network,hike_rating
+  prepare.min_network_size: 200
+  prepare.min_one_way_network_size: 200
+  
+  # Web interface settings
+  web.change_graph.enabled: false
+  
+  # Memory optimization for Cloud Run
+  graph.dataaccess.default_type: RAM_STORE_MMAP
+  
+  # Different routing profiles using bike vehicle with custom models
+  profiles:
+    - name: bike
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [bike.json]
+      
+    - name: gravel
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [gravel.json]
+      
+    - name: mountain
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [mountain.json]
+
+# Cloud Run optimized server settings
+server:
+  type: default
+  application_connectors:
+    - type: http
+      port: 8080
+      bind_host: 0.0.0.0
+  admin_connectors:
+    - type: http
+      port: 8081
+      bind_host: 0.0.0.0
+  
+  # Logging configuration for Cloud Logging
+  request_log:
+    appenders:
+      - type: console
+        target: STDOUT
+          
+  # Gzip compression
+  gzip:
+    enabled: true
+    minimum_entity_size: 1KiB
+    buffer_size: 32KiB
+    
+  # Thread configuration for Cloud Run
+  min_threads: 8
+  max_threads: 32
+  
+# Logging configuration for Cloud Logging integration
+logging:
+  level: INFO
+  loggers:
+    com.graphhopper: INFO
+    root: INFO
+  appenders:
+    - type: console
+      target: STDOUT

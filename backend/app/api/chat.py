@@ -5,7 +5,7 @@ from typing import List
 
 import requests
 from dateutil import parser as date_parser
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db, uuid_to_db_format
@@ -21,6 +21,7 @@ from app.schemas.chat import (  # schema
     ChatRequest,
     ChatResponse,
 )
+from app.core.limiter import limiter
 from app.services.usage_service import check_and_log_usage
 from app.services.openai_chat import openai_chat_service
 from app.services.ai_agent import ai_agent
@@ -751,14 +752,16 @@ def _parse_and_update_training_plan(
     return True, feedback
 
 
-def _extract_action_result(
-    tool_name: str, result: dict
-) -> "ActionResult | None":
+def _extract_action_result(tool_name: str, result: dict) -> "ActionResult | None":
     """Convert a tool result dict into an ActionResult if it contains action metadata."""
     if not result or "action_type" not in result:
         return None
     # Strip action_* keys from data payload
-    data = {k: v for k, v in result.items() if not k.startswith("action_") and k != "message"}
+    data = {
+        k: v
+        for k, v in result.items()
+        if not k.startswith("action_") and k != "message"
+    }
     return ActionResult(
         type=result["action_type"],
         title=result.get("action_title", tool_name),
@@ -772,7 +775,9 @@ def _extract_action_result(
 
 
 @router.post("/message", response_model=ChatResponse)
+@limiter.limit("20/minute")
 def send_message(
+    request: Request,
     chat_request: ChatRequest,
     current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db),
@@ -983,54 +988,6 @@ Based on the activity data above, please answer the user's question: {last_user_
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"OpenAI chat failed: {str(e)}")
-
-
-@router.get("/debug")
-async def debug_openai():
-    """Debug endpoint for testing OpenAI integration."""
-    try:
-        from app.core.config import settings
-        from app.services.openai_chat import openai_chat_service
-
-        # Test basic configuration
-        api_key_preview = (
-            settings.OPENAI_API_KEY[:20] + "..."
-            if settings.OPENAI_API_KEY
-            else "NOT SET"
-        )
-
-        # Test OpenAI API call
-        response = openai_chat_service.chat_completion(
-            [
-                {
-                    "role": "user",
-                    "content": "Respond with just 'OK' if you can read this.",
-                }
-            ],
-            max_tokens=10,
-        )
-
-        return {
-            "status": "success",
-            "api_key_preview": api_key_preview,
-            "openai_response": response,
-            "message": "OpenAI integration working correctly",
-        }
-    except Exception as e:
-        import traceback
-
-        return {
-            "status": "error",
-            "error_type": type(e).__name__,
-            "error_message": str(e),
-            "traceback": traceback.format_exc(),
-            "api_key_preview": getattr(settings, "OPENAI_API_KEY", "NOT_ACCESSIBLE")[
-                :20
-            ]
-            + "..."
-            if hasattr(locals(), "settings") and settings.OPENAI_API_KEY
-            else "NOT SET",
-        }
 
 
 @router.get("/history", response_model=ChatHistoryResponse)

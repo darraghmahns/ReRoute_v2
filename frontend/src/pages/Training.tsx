@@ -228,9 +228,6 @@ const Training: React.FC = () => {
       setLoading(true);
       const userPlans = await trainingService.getPlans();
 
-      console.log('Training Debug: Loaded plans from API:', userPlans);
-      console.log('Training Debug: Plans length:', userPlans.length);
-      
       // Set the most recent active plan as current (matching AI agent logic)
       // First try to get active plan, then fall back to most recent plan
       let activePlan = userPlans.find((plan) => plan.is_active);
@@ -240,23 +237,7 @@ const Training: React.FC = () => {
       }
 
       if (activePlan) {
-        console.log('Training Debug: Setting active plan:', {
-          id: activePlan.id,
-          isActive: activePlan.is_active,
-          planData: activePlan.plan_data,
-          hasWeeks: !!activePlan.plan_data?.weeks,
-          weeksLength: activePlan.plan_data?.weeks?.length,
-          firstWeek: activePlan.plan_data?.weeks?.[0]
-        });
         setCurrentPlan(activePlan);
-        console.log(
-          'Loaded training plan:',
-          activePlan.id,
-          'Active:',
-          activePlan.is_active
-        );
-      } else {
-        console.log('Training Debug: No active plan found');
       }
     } catch (error) {
       console.error('Failed to load plans:', error);
@@ -297,14 +278,6 @@ const Training: React.FC = () => {
 
   const getCurrentWeek = (): TrainingWeek | null => {
     if (!currentPlan || !currentPlan.plan_data || !currentPlan.plan_data.weeks || !currentPlan.plan_data.weeks[currentWeekIndex]) {
-      console.log('Training Debug: getCurrentWeek returning null', {
-        hasPlan: !!currentPlan,
-        hasPlanData: !!currentPlan?.plan_data,
-        hasWeeks: !!currentPlan?.plan_data?.weeks,
-        currentWeekIndex,
-        weeksLength: currentPlan?.plan_data?.weeks?.length,
-        currentWeek: currentPlan?.plan_data?.weeks?.[currentWeekIndex]
-      });
       return null;
     }
     return currentPlan.plan_data.weeks[currentWeekIndex];
@@ -313,7 +286,6 @@ const Training: React.FC = () => {
   const getTotalTrainingTime = (): number => {
     const week = getCurrentWeek();
     if (!week || !week.workouts) {
-      console.log('Training Debug: getTotalTrainingTime returning 0', { week });
       return 0;
     }
 
@@ -321,8 +293,7 @@ const Training: React.FC = () => {
       return Object.values(week.workouts).reduce((total, workout) => {
         return total + (workout?.duration_minutes || 0);
       }, 0);
-    } catch (error) {
-      console.log('Training Debug: Error calculating total training time', error, week);
+    } catch {
       return 0;
     }
   };
@@ -546,7 +517,6 @@ const Training: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 sm:gap-4">
               {Object.entries(currentWeek.workouts).map(([day, workout]) => {
                 if (!workout) {
-                  console.log('Training Debug: No workout for day', day);
                   return null;
                 }
                 return (

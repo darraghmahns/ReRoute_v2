@@ -1,0 +1,18 @@
+FROM eclipse-temurin:11-jre
+
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+ENV GRAPHHOPPER_VERSION=8.0
+RUN curl -sL -o graphhopper-web-${GRAPHHOPPER_VERSION}.jar \
+    https://github.com/graphhopper/graphhopper/releases/download/${GRAPHHOPPER_VERSION}/graphhopper-web-${GRAPHHOPPER_VERSION}.jar
+
+COPY bike.json gravel.json mountain.json ./
+COPY config.local.yml ./config.yml
+
+EXPOSE 8989
+
+# /data is mounted from the host: contains OSM pbf + graph-cache output
+# -Xmx8g: 3-region merged file (Ireland+California+Montana) with SRTM elevation needs more heap
+CMD ["java", "-Xmx8g", "-Xms1g", "-jar", "graphhopper-web-8.0.jar", "server", "config.yml"]

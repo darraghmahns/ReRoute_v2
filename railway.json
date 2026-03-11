@@ -8,6 +8,7 @@
   "deploy": {
     "releaseCommand": "alembic upgrade head",
     "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"
   }
 }

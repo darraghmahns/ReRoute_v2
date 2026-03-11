@@ -1,7 +1,7 @@
 services:
   graphhopper:
     build:
-      context: ../reroute-graphhopper-server
+      context: ./graphhopper
       dockerfile: Dockerfile.local
     ports:
       - "8989:8989"

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from app.schemas.route import (
     RouteUpdate,
 )
 from app.schemas.training import WorkoutType
+from app.core.limiter import limiter
 from app.services.usage_service import check_and_log_usage
 from app.services.workout_route_planner import workout_route_planner
 from app.services.terrain_research_agent import terrain_research_agent
@@ -35,12 +36,20 @@ router = APIRouter(prefix="/routes", tags=["routes"])
 
 
 @router.post("/generate", response_model=RouteGenerationResponse)
+@limiter.limit("5/minute")
 def generate_route(
+    request: Request,
     params: RouteGenerationParams,
     current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db),
 ):
     """Generate new route with GraphHopper and Strava integration"""
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
+
     try:
         result = route_generation_service.generate_route(
             params, str(current_user.id), db
@@ -89,7 +98,9 @@ def get_route(
     """Get specific route"""
     route = (
         db.query(Route)
-        .filter(Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id)
+        )
         .first()
     )
 
@@ -109,7 +120,9 @@ def update_route(
     """Update route"""
     route = (
         db.query(Route)
-        .filter(Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id)
+        )
         .first()
     )
 
@@ -136,7 +149,9 @@ def delete_route(
     """Delete route"""
     route = (
         db.query(Route)
-        .filter(Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id)
+        )
         .first()
     )
 
@@ -158,7 +173,9 @@ def download_gpx(
     """Download GPX file"""
     route = (
         db.query(Route)
-        .filter(Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id)
+        )
         .first()
     )
 
@@ -178,7 +195,9 @@ def download_gpx(
 
 
 @router.post("/loops", response_model=RouteGenerationResponse)
+@limiter.limit("5/minute")
 def generate_loop(
+    request: Request,
     lat: float,
     lng: float,
     distance_km: float,
@@ -188,6 +207,11 @@ def generate_loop(
     db: Session = Depends(get_db),
 ):
     """Generate loop route of specified distance"""
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
 
     params = RouteGenerationParams(
         start_lat=lat,
@@ -198,7 +222,22 @@ def generate_loop(
         is_loop=True,
     )
 
-    return generate_route(params, current_user, db)
+    try:
+        result = route_generation_service.generate_route(
+            params, str(current_user.id), db
+        )
+        return RouteGenerationResponse(
+            message=result["message"],
+            route=RouteResponse.from_orm(result["route"]),
+            generation_time_ms=result["generation_time_ms"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Loop route generation error: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Loop route generation failed: {str(e)}"
+        )
 
 
 @router.post("/saved", response_model=SavedRouteSchema)
@@ -228,7 +267,9 @@ def save_route(
         raise HTTPException(status_code=400, detail="Route already saved")
 
     saved_route = SavedRoute(
-        user_id=uuid_to_db_format(current_user.id), route_id=save_data.route_id, notes=save_data.notes
+        user_id=uuid_to_db_format(current_user.id),
+        route_id=save_data.route_id,
+        notes=save_data.notes,
     )
 
     db.add(saved_route)
@@ -246,23 +287,34 @@ def get_saved_routes(
     """Get user's saved routes"""
 
     saved_routes = (
-        db.query(SavedRoute).filter(SavedRoute.user_id == uuid_to_db_format(current_user.id)).all()
+        db.query(SavedRoute)
+        .filter(SavedRoute.user_id == uuid_to_db_format(current_user.id))
+        .all()
     )
 
     return [SavedRouteSchema.from_orm(sr) for sr in saved_routes]
 
 
 @router.get("/{route_id}/suggestions")
+@limiter.limit("5/minute")
 def get_route_suggestions(
+    request: Request,
     route_id: str,
     current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db),
 ):
     """Get Strava-based route improvement suggestions"""
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
 
     route = (
         db.query(Route)
-        .filter(Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            Route.id == route_id, Route.user_id == uuid_to_db_format(current_user.id)
+        )
         .first()
     )
 
@@ -279,7 +331,9 @@ def get_route_suggestions(
 
 
 @router.post("/generate-workout", response_model=RouteGenerationResponse)
+@limiter.limit("5/minute")
 def generate_workout_route(
+    request: Request,
     workout_type: WorkoutType,
     duration_minutes: int,
     start_lat: float,
@@ -300,6 +354,12 @@ def generate_workout_route(
 
     difficulty: "easy" | "moderate" | "hard" — scales interval segment requirements.
     """
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
+
     try:
         terrain_target = workout_route_planner.workout_to_terrain_target(
             workout_type=workout_type,
@@ -344,7 +404,9 @@ def generate_workout_route(
 
 
 @router.post("/simulate-race", response_model=RouteGenerationResponse)
+@limiter.limit("5/minute")
 def simulate_race_route(
+    request: Request,
     race_name: str,
     start_lat: float,
     start_lng: float,
@@ -363,6 +425,12 @@ def simulate_race_route(
     target_distance_km: scale the simulation to a shorter/longer local route
       while preserving the ascent-per-km ratio. Defaults to 40km.
     """
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail=msg)
+
     try:
         terrain_target = terrain_research_agent.research_race(
             race_name=race_name,
@@ -395,13 +463,13 @@ def simulate_race_route(
 
     except Exception as e:
         logger.error(f"Race simulation route error: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Race simulation failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Race simulation failed: {str(e)}")
 
 
 @router.post("/generate-ai-loop", response_model=RouteGenerationResponse)
+@limiter.limit("5/minute")
 def generate_ai_loop_route(
+    request: Request,
     start_lat: float,
     start_lng: float,
     distance_km: float,
@@ -419,7 +487,9 @@ def generate_ai_loop_route(
     point (e.g. a trailhead) instead of automated waypoint selection.
     """
     # Check free tier limit: 3 routes per month
-    allowed, msg = check_and_log_usage(db, current_user, "route_generation", limit_free=3)
+    allowed, msg = check_and_log_usage(
+        db, current_user, "route_generation", limit_free=3
+    )
     if not allowed:
         raise HTTPException(status_code=403, detail=msg)
 

@@ -1,0 +1,54 @@
+# GraphHopper Configuration for Montana Cycling Routes
+# Optimized for highway-free, scenic cycling with strict surface controls
+
+graphhopper:
+  graph.vehicles: bike
+  graph.location: graph-cache
+  graph.elevation.provider: srtm
+  graph.elevation.cache_dir: elevation-cache
+  
+  # Enhanced data sources for better routing
+  datareader.file: montana-latest.osm.pbf
+  
+  # OSM import optimizations
+  import.osm.ignored_highways: motorway,motorway_link,trunk,trunk_link
+  
+  # Improved graph preprocessing
+  graph.encoded_values: road_class,road_class_link,road_environment,max_speed,road_access,surface,smoothness,bike_network,hike_rating
+  prepare.min_network_size: 200
+  prepare.min_one_way_network_size: 200
+  
+  # Web interface settings
+  web.change_graph.enabled: false
+  
+  # Different routing profiles using bike vehicle with custom models
+  profiles:
+    - name: bike
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [bike.json]
+      
+    - name: gravel
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [gravel.json]
+      
+    - name: mountain
+      vehicle: bike
+      weighting: custom
+      custom_model_files: [mountain.json]
+
+# Enhanced server settings
+server:
+  type: default
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: 0.0.0.0
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: 0.0.0.0
+  request_log:
+    appenders:
+      - type: console

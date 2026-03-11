@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 import app.models.route as route_models  # ensure Route models are registered
 import app.models.strava as strava_models  # ensure StravaActivity is registered
@@ -18,9 +21,14 @@ from app.api import (
     subscription,
     training,
 )
-from app.core.database import Base, engine
+from app.core.config import settings
+from app.core.limiter import limiter
 
 app = FastAPI(title="Reroute - AI-Powered Cycling Training Assistant", version="1.0.1")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +45,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+async def validate_config_on_startup() -> None:
+    if not settings.USE_SQLITE:
+        settings.validate_production_config()
+
+
 # Include routers with /api prefix
 app.include_router(auth.router, prefix="/api")
 app.include_router(profiles.router, prefix="/api")
@@ -48,12 +63,10 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(subscription.router, prefix="/api")
 
 
-# Try to create database tables, fall back gracefully if database is not available
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"Warning: Could not initialize database: {e}")
-    print("Application will continue without database functionality")
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 
 # Mount static files (React frontend)
 static_dir = "static"

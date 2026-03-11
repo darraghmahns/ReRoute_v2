@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db, uuid_to_db_format
@@ -14,6 +14,7 @@ from app.schemas.training import (
     TrainingPlanListResponse,
     TrainingPlanResponse,
 )
+from app.core.limiter import limiter
 from app.services.usage_service import check_and_log_usage
 from app.services.training_plan_generator import training_plan_generator
 
@@ -21,7 +22,9 @@ router = APIRouter(prefix="/training", tags=["training"])
 
 
 @router.post("/plans/generate", response_model=TrainingPlanResponse)
+@limiter.limit("3/minute")
 def generate_plan(
+    http_request: Request,
     request: GeneratePlanRequest,
     current_user: User = Depends(get_current_active_user_by_session),
     db: Session = Depends(get_db),
@@ -60,7 +63,8 @@ def generate_plan(
         existing_active_plans = (
             db.query(TrainingPlan)
             .filter(
-                TrainingPlan.user_id == uuid_to_db_format(current_user.id), TrainingPlan.is_active == True
+                TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+                TrainingPlan.is_active == True,
             )
             .all()
         )
@@ -235,7 +239,10 @@ def get_plan(
     """Get a specific training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            TrainingPlan.id == plan_id,
+            TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+        )
         .first()
     )
 
@@ -266,7 +273,10 @@ def get_week_plan(
     """Get a specific week from a training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            TrainingPlan.id == plan_id,
+            TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+        )
         .first()
     )
 
@@ -314,7 +324,10 @@ def mark_workout_complete(
     """Mark a workout as completed or not completed"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            TrainingPlan.id == plan_id,
+            TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+        )
         .first()
     )
 
@@ -360,7 +373,10 @@ def delete_plan(
     """Delete a training plan"""
     plan = (
         db.query(TrainingPlan)
-        .filter(TrainingPlan.id == plan_id, TrainingPlan.user_id == uuid_to_db_format(current_user.id))
+        .filter(
+            TrainingPlan.id == plan_id,
+            TrainingPlan.user_id == uuid_to_db_format(current_user.id),
+        )
         .first()
     )
 

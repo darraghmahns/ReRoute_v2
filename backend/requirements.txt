@@ -19,3 +19,4 @@ geopy==2.4.1
 numpy==1.26.4
 sendgrid==6.11.0
 stripe>=7.0.0,<8.0.0
+slowapi==0.1.9
