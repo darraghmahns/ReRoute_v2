@@ -14,7 +14,7 @@ WORKDIR /app
 ENV GRAPHHOPPER_VERSION=8.0
 RUN wget -q https://github.com/graphhopper/graphhopper/releases/download/${GRAPHHOPPER_VERSION}/graphhopper-web-${GRAPHHOPPER_VERSION}.jar
 
-RUN wget -q https://download.geofabrik.de/north-america/us/montana-latest.osm.pbf
+RUN wget -q https://download.geofabrik.de/north-america/us-west-latest.osm.pbf
 
 RUN mkdir -p /app/config /app/elevation-cache /app/graph-cache
 
@@ -34,4 +34,4 @@ ENV PORT=8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
   CMD curl -f http://localhost:8080/info || exit 1
 
-CMD ["sh", "-c", "java -Xmx1536m -XX:+UseG1GC -XX:+UseStringDeduplication -jar graphhopper-web-${GRAPHHOPPER_VERSION}.jar server config/config.yml"]
+CMD ["sh", "-c", "java -Xms512m -Xmx6g -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m -jar graphhopper-web-${GRAPHHOPPER_VERSION}.jar server config/config.yml"]
