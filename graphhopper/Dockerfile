@@ -27,10 +27,10 @@ RUN wget -q https://download.geofabrik.de/north-america/us-west-latest.osm.pbf
 RUN mkdir -p /app/config /app/elevation-cache /app/graph-cache
 
 # Copy configuration files
-COPY config.gcp.yml /app/config/config.yml
-COPY bike.json /app/
-COPY gravel.json /app/
-COPY mountain.json /app/
+COPY graphhopper/config.gcp.yml /app/config/config.yml
+COPY graphhopper/bike.json /app/
+COPY graphhopper/gravel.json /app/
+COPY graphhopper/mountain.json /app/
 
 # Pre-build the graph at image build time so container startup is fast (~1-2 min vs ~40 min)
 RUN java -Xms512m -Xmx6g -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m \
