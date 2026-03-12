@@ -21,7 +21,7 @@ RUN wget -q https://github.com/graphhopper/graphhopper/releases/download/${GRAPH
 
 # Download OSM data for Montana (or your region)
 # You can change this to your preferred region
-RUN wget -q https://download.geofabrik.de/north-america/us/montana-latest.osm.pbf
+RUN wget -q https://download.geofabrik.de/north-america/us-west-latest.osm.pbf
 
 # Create necessary directories
 RUN mkdir -p /app/config /app/elevation-cache /app/graph-cache
@@ -32,6 +32,10 @@ COPY bike.json /app/
 COPY gravel.json /app/
 COPY mountain.json /app/
 
+# Pre-build the graph at image build time so container startup is fast (~1-2 min vs ~40 min)
+RUN java -Xms512m -Xmx6g -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m \
+    -jar graphhopper-web-${GRAPHHOPPER_VERSION}.jar import config/config.yml
+
 # Create a non-root user for security
 RUN groupadd -r graphhopper && useradd -r -g graphhopper graphhopper
 RUN chown -R graphhopper:graphhopper /app
@@ -41,11 +45,11 @@ USER graphhopper
 EXPOSE 8080
 
 # Health check with Cloud Run compatible endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
   CMD curl -f http://localhost:8080/info || exit 1
 
 # Use environment variable for port (Cloud Run requirement)
 ENV PORT=8080
 
 # Start GraphHopper with optimized JVM settings for Cloud Run
-CMD ["sh", "-c", "java -Xmx1536m -XX:+UseG1GC -XX:+UseStringDeduplication -jar graphhopper-web-${GRAPHHOPPER_VERSION}.jar server config/config.yml"]
+CMD ["sh", "-c", "java -Xms512m -Xmx6g -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m -jar graphhopper-web-${GRAPHHOPPER_VERSION}.jar server config/config.yml"]
